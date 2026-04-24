@@ -2,6 +2,9 @@ using TMPro;
 using UnityEngine;
 using Photon.Pun;
 
+// 멀티 게임 씬에서 현재 방 제목을 표시하고, 같은 Photon 방에 있는 플레이어끼리 실시간 채팅을 주고받는 스크립트
+// 전송 버튼 클릭 시 RPC를 통해 모든(같은 방에 있는) 클라이언트에 메시지를 전달하고, 채팅 로그 UI에 시간과 발신자를 함께 출력
+
 public class PhotonChatManager : MonoBehaviourPun
 {
     public TMP_InputField chatInput;

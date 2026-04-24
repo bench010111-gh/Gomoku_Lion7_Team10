@@ -2,6 +2,8 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// 시작 씬에서 입력을 받아 안내 문구 표시, 두 번째 입력 시 로그인 씬으로 이동
+
 public class StartSceneManager : MonoBehaviour
 {
     [Header("UI")]
