@@ -35,6 +35,10 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
     public Transform roomListContent;
     public GameObject roomListItemPrefab;
 
+    [Header("Room Search")]
+    public TMP_InputField searchRoomInput;
+    private string currentSearchKeyword = "";
+
     private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
     private RoomInfo selectedRoomInfo;
 
@@ -109,10 +113,36 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         RefreshRoomListUI();
     }
 
+    public void OnClickSearchRoom()
+    {
+        if (searchRoomInput == null)
+        {
+            SetStatus("검색 입력 UI가 연결되지 않았습니다.");
+            return;
+        }
+
+        currentSearchKeyword = searchRoomInput.text.Trim().ToLower();
+        RefreshRoomListUI();
+    }
+
+    public void OnClickCancelSearch()
+    {
+        currentSearchKeyword = "";
+
+        if (searchRoomInput != null)
+        {
+            searchRoomInput.text = "";
+        }
+
+        RefreshRoomListUI();
+    }
+
     private void RefreshRoomListUI()
     {
         if (roomListContent == null || roomListItemPrefab == null)
             return;
+
+
 
         foreach (Transform child in roomListContent)
         {
@@ -123,6 +153,14 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         {
             if (!roomInfo.IsVisible)
                 continue;
+
+            if (!string.IsNullOrEmpty(currentSearchKeyword))
+            {
+                string roomNameLower = roomInfo.Name.ToLower();
+
+                if (!roomNameLower.Contains(currentSearchKeyword))
+                    continue;
+            }
 
             GameObject item = Instantiate(roomListItemPrefab, roomListContent);
 
