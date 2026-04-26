@@ -49,7 +49,7 @@ public class GameManager : MonoBehaviour
                     return;
                 }
 
-                if (model.IsBoardFull())
+                if (model.IsDraw())
                 {
                     EndGame("¹«½ÂºÎ! º¸µå°¡ °¡µæ Ã¡½À´Ï´Ù.");
                     return;
