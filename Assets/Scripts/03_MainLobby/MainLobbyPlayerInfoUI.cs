@@ -2,6 +2,9 @@ using TMPro;
 using UnityEngine;
 using BackEnd;
 
+// 메인 로비에서 현재 로그인한 플레이어의 닉네임, 전적, 승률 정보를 뒤끝 USER_DATA 테이블에서 불러와 표시하는 스크립트
+// 로그인 세션 정보와 저장된 전적 데이터를 기반으로 메인 로비 UI를 갱신
+
 public class MainLobbyPlayerInfoUI : MonoBehaviour
 {
     public TMP_Text nicknameText;

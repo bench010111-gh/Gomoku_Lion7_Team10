@@ -3,6 +3,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using BackEnd;
 
+// 뒤끝 회원가입과 로그인을 처리하고, 로그인 성공 시 UserSession에 사용자 정보를 저장하는 스크립트
+// 최초 로그인한 유저의 전적 데이터(USER_DATA)가 없으면 기본 데이터를 생성한 뒤 메인 로비 씬으로 이동
+
+
 public class BackendAuthManager : MonoBehaviour
 {
     public TMP_InputField idInput;

@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using BackEnd;
 
+// 메인 로비에서 플레이어 닉네임을 표시하고, 싱글/멀티/듀오 로비 씬으로 이동을 관리
+// 뒤로가기 버튼 클릭 시 로그아웃 확인 팝업을 띄우며, 로그아웃 성공 시 로그인 씬으로 이동
+
 public class MainLobbyManager : MonoBehaviour
 {
     public TMP_Text nicknameText;
