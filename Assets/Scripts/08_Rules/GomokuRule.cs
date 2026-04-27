@@ -11,7 +11,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //승리판별 함수
-    public bool CheckWin(StoneColor[,] board, int x, int y, StoneColor color)
+    public bool CheckWin(StoneType[,] board, int x, int y, StoneType color)
     {
         //4가지 탐색 방향
         int[,] directions = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 } };
@@ -30,10 +30,10 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             count += CountStones(board, x, y, -dx, -dy, color);
 
             //흑돌은 무조건 5수여야 승리(장목 승리 금지)
-            if (color == StoneColor.Black && count == 5)
+            if (color == StoneType.Black && count == 5)
                 return true;
             //백돌은 5수 이상이라면 승리
-            if (color == StoneColor.White && count >= 5)
+            if (color == StoneType.White && count >= 5)
                 return true;
         }
 
@@ -47,7 +47,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //착수시 연속된 돌의 개수를 판별하기 위한 함수
-    private int CountStones(StoneColor[,] board, int startX, int startY, int dx, int dy, StoneColor color)
+    private int CountStones(StoneType[,] board, int startX, int startY, int dx, int dy, StoneType color)
     {
         int count = 0;
 
@@ -66,7 +66,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //금수 판정
-    public bool IsForbidden(StoneColor[,] board, int x, int y, StoneColor color, int depth = 0)
+    public bool IsForbidden(StoneType[,] board, int x, int y, StoneType color, int depth = 0)
     {
         board[x, y] = color; //가상착수
 
@@ -89,7 +89,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             else if (pattern == LinePattern.OpenThree) openThreeCount++;
         }
 
-        board[x, y] = StoneColor.None; //가상착수 제거(원상태 복구)
+        board[x, y] = StoneType.Empty; //가상착수 제거(원상태 복구)
 
         if (isOverline) return true; //장목 금수
         if (fourCount >= 2) return true; // 44금수
@@ -99,7 +99,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //가상 착수 후 축에 대해서 분석
-    private LinePattern AnalyzeAxis(StoneColor[,] board, int x, int y, int dx, int dy, StoneColor color, int depth)
+    private LinePattern AnalyzeAxis(StoneType[,] board, int x, int y, int dx, int dy, StoneType color, int depth)
     {
         //해당 축의 돌들을 문자열로 뽑아옴
         string line = GetAxisString(board, x, y, dx, dy, color);
@@ -200,7 +200,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //문자열 스캐너
-    private string GetAxisString(StoneColor[,] board, int x, int y, int dx, int dy, StoneColor color)
+    private string GetAxisString(StoneType[,] board, int x, int y, int dx, int dy, StoneType color)
     {
         string result = "";
 
@@ -216,9 +216,9 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             }
             else
             {
-                StoneColor current = board[nx, ny];
+                StoneType current = board[nx, ny];
                 if (current == color) result += "X"; //같은 색의 돌
-                else if (current == StoneColor.None) result += "_"; //빈칸
+                else if (current == StoneType.Empty) result += "_"; //빈칸
                 else result += "O"; //상대 돌(벽이랑 동일 취급)
             }
         }

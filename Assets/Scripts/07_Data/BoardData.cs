@@ -4,12 +4,14 @@ using UnityEngine;
 // 좌표 범위 검사와 보드 초기화 기능을 제공
 // 공통 규칙 및 각 모드의 게임 진행 스크립트에서 함께 사용
 
-public enum StoneType
-{
-    Empty = 0,
-    Black = 1,
-    White = 2
-}
+//열거형타입들을 따로 정리해둔 스크립트 추가
+//public enum StoneType
+//{
+//    Empty = 0,
+//    Black = 1,
+//    White = 2
+//}
+
 
 [System.Serializable]
 public class BoardData

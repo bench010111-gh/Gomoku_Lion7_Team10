@@ -1,7 +1,7 @@
 //오목알색 열거형
-public enum StoneColor
+public enum StoneType
 {
-    None = 0,
+    Empty = 0,
     Black = 1,
     White = 2
 }
