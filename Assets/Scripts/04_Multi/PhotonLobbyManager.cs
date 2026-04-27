@@ -7,9 +7,6 @@ using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
 
-// 멀티 로비 씬에서 Photon 연결, 로비 입장, 방 목록 갱신, 방 생성/입장을 관리하는 스크립트
-// 공개/비공개 방 생성 팝업과 입장 확인 팝업을 제어, 방 입장 성공 시 멀티 게임 씬으로 이동
-
 public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 {
     [Header("Top UI")]
@@ -37,19 +34,25 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     [Header("Room Search")]
     public TMP_InputField searchRoomInput;
-    private string currentSearchKeyword = "";
 
-    private Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
+    private string currentSearchKeyword = "";
+    private readonly Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
+
     private RoomInfo selectedRoomInfo;
 
     private void Start()
     {
         string playerNickname = "Guest";
 
-        if (UserSession.Instance != null)
+        if (UserSession.Instance != null && !string.IsNullOrEmpty(UserSession.Instance.nickname))
         {
             playerNickname = UserSession.Instance.nickname;
         }
+
+        PhotonNetwork.NickName = playerNickname;
+
+        // 서로 다른 빌드/에디터에서 버전이 달라져 방이 안 보이는 문제 방지
+        PhotonNetwork.GameVersion = "1.0";
 
         if (playerName != null)
         {
@@ -59,38 +62,72 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         if (createRoomPopup != null) createRoomPopup.SetActive(false);
         if (joinRoomPopup != null) joinRoomPopup.SetActive(false);
 
+        if (PhotonNetwork.InRoom)
+        {
+            SetStatus("이전 방에서 나가는 중...");
+            PhotonNetwork.LeaveRoom();
+            return;
+        }
+
+        EnsurePhotonLobby();
+    }
+
+    private void EnsurePhotonLobby()
+    {
         if (!PhotonNetwork.IsConnected)
         {
-            PhotonNetwork.NickName = playerNickname;
-            PhotonNetwork.ConnectUsingSettings();
             SetStatus("Photon 연결 중...");
+            PhotonNetwork.ConnectUsingSettings();
+            return;
         }
-        else
-        {
-            SetStatus("Photon 이미 연결됨");
 
-            if (!PhotonNetwork.InLobby)
-            {
-                PhotonNetwork.JoinLobby();
-                SetStatus("Photon 로비 입장 중...");
-            }
+        if (PhotonNetwork.InLobby)
+        {
+            SetStatus("로비 입장 완료");
+            return;
         }
+
+        if (PhotonNetwork.NetworkClientState == ClientState.JoiningLobby)
+        {
+            SetStatus("로비 입장 중...");
+            return;
+        }
+
+        if (PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("로비 입장 중...");
+            PhotonNetwork.JoinLobby();
+            return;
+        }
+
+        SetStatus("Photon 연결 준비 중...");
     }
 
     public override void OnConnectedToMaster()
     {
-        SetStatus("Photon 연결 성공, 로비 입장 중...");
-        PhotonNetwork.JoinLobby();
+        SetStatus("Photon 연결 성공");
+
+        if (!PhotonNetwork.InLobby)
+        {
+            SetStatus("로비 입장 중...");
+            PhotonNetwork.JoinLobby();
+        }
     }
 
     public override void OnJoinedLobby()
     {
-        SetStatus("로비 입장 성공");
+        SetStatus("로비 입장 완료");
     }
 
     public override void OnLeftLobby()
     {
         SetStatus("로비에서 나갔습니다.");
+    }
+
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        SetStatus("Photon 연결이 끊어졌습니다.");
+        Debug.LogWarning("Photon disconnected: " + cause);
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
@@ -140,9 +177,10 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
     private void RefreshRoomListUI()
     {
         if (roomListContent == null || roomListItemPrefab == null)
+        {
+            Debug.LogWarning("Room list UI is not assigned.");
             return;
-
-
+        }
 
         foreach (Transform child in roomListContent)
         {
@@ -199,11 +237,15 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // -----------------------------
-    // Create Room Popup
-    // -----------------------------
     public void OnClickOpenCreateRoomPopup()
     {
+        if (!PhotonNetwork.InLobby)
+        {
+            SetStatus("아직 로비 입장 전입니다.");
+            EnsurePhotonLobby();
+            return;
+        }
+
         if (createRoomPopup != null)
         {
             createRoomPopup.SetActive(true);
@@ -235,6 +277,18 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     public void OnClickCreateRoomConfirm()
     {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Photon 연결이 아직 준비되지 않았습니다.");
+            return;
+        }
+
+        if (PhotonNetwork.InRoom)
+        {
+            SetStatus("이미 방에 들어가 있습니다.");
+            return;
+        }
+
         if (createRoomNameInput == null)
         {
             SetStatus("방 이름 입력 UI가 연결되지 않았습니다.");
@@ -260,6 +314,8 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
         RoomOptions options = new RoomOptions();
         options.MaxPlayers = 2;
+        options.IsVisible = true;
+        options.IsOpen = true;
         options.EmptyRoomTtl = 0;
 
         Hashtable props = new Hashtable();
@@ -275,7 +331,7 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         options.CustomRoomPropertiesForLobby = new string[] { "host", "priv", "pw" };
 
         PhotonNetwork.CreateRoom(roomName, options);
-        SetStatus("방 생성 시도 중...");
+        SetStatus("방 생성 중...");
 
         if (createRoomPopup != null)
         {
@@ -283,9 +339,6 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // -----------------------------
-    // Join Room Popup
-    // -----------------------------
     private void OpenJoinRoomPopup(RoomInfo roomInfo)
     {
         selectedRoomInfo = roomInfo;
@@ -301,6 +354,7 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
 
         bool isPrivate = false;
+
         if (roomInfo.CustomProperties.ContainsKey("priv"))
         {
             isPrivate = (bool)roomInfo.CustomProperties["priv"];
@@ -330,6 +384,12 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     public void OnClickJoinRoomYes()
     {
+        if (!PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus("Photon 연결이 아직 준비되지 않았습니다.");
+            return;
+        }
+
         if (selectedRoomInfo == null)
         {
             SetStatus("선택된 방 정보가 없습니다.");
@@ -367,7 +427,7 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
 
         PhotonNetwork.JoinRoom(selectedRoomInfo.Name);
-        SetStatus("방 입장 시도 중...");
+        SetStatus("방 입장 중...");
 
         if (joinRoomPopup != null)
         {
@@ -375,33 +435,41 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
     }
 
-    // -----------------------------
-    // Photon Callbacks
-    // -----------------------------
     public override void OnCreatedRoom()
     {
-        SetStatus("방 생성 성공");
+        SetStatus("방 생성 완료");
     }
 
     public override void OnJoinedRoom()
     {
-        SetStatus("방 입장 성공");
+        SetStatus("방 입장 완료");
         SceneManager.LoadScene(multiGameSceneName);
+    }
+
+    public override void OnLeftRoom()
+    {
+        SetStatus("방에서 나왔습니다.");
+        EnsurePhotonLobby();
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
-        SetStatus("방 생성 실패: " + message);
+        SetStatus("방 생성 실패");
+        Debug.LogWarning($"Create room failed: {returnCode} / {message}");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
-        SetStatus("방 입장 실패: " + message);
+        SetStatus("방 입장 실패");
+        Debug.LogWarning($"Join room failed: {returnCode} / {message}");
     }
 
-    // -----------------------------
-    // Utility
-    // -----------------------------
+    public override void OnJoinRandomFailed(short returnCode, string message)
+    {
+        SetStatus("방 입장 실패");
+        Debug.LogWarning($"Join random failed: {returnCode} / {message}");
+    }
+
     private void SetStatus(string message)
     {
         if (statusText != null)
