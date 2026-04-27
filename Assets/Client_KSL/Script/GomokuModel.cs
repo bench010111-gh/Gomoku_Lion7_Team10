@@ -1,4 +1,4 @@
-public class GomokuModel
+public class GomokuModel //오목판 상태 저장 스크립트
 {
     public const int BoardSize = 15;
     private StoneColor[,] board = new StoneColor[BoardSize, BoardSize];
@@ -33,16 +33,20 @@ public class GomokuModel
         placedStoneCount++;
         return PlaceResult.Success;
     }
+
+    //승리했는지 확인하는 함수
     public bool CheckWin(int x, int y, StoneColor color)
     {
         return rule.CheckWin(board, x, y, color);
     }
 
+    //무승부인지 확인하는 함수
     public bool IsDraw()
     {
         return rule.IsDraw(placedStoneCount);
     }
 
+    //특정 좌표에 무슨 돌이 있는지 알려주기 위한 함수
     public StoneColor GetStone(int x, int y)
     {
         return board[x, y];

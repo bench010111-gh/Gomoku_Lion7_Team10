@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GomokuView : MonoBehaviour
+public class GomokuView : MonoBehaviour //바둑판의 상태를 시각화(화면 출력)
 {
     [Header("오목알 프리팹")]
     public GameObject blackPrefab;
@@ -21,6 +21,7 @@ public class GomokuView : MonoBehaviour
         return new Vector2Int(x, y);
     }
 
+    //돌 그리기(시각화)
     public void DrawStone(int x, int y, StoneColor Color)
     {
         GameObject prefab = (Color == StoneColor.Black) ? blackPrefab : whitePrefab;

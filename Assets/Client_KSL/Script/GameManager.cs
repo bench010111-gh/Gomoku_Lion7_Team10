@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class GameManager : MonoBehaviour //게임의 흐름 통제(금수 테스트를 위한 임시 스크립트)
 {
     private GomokuModel model;
     public GomokuView view;
@@ -29,12 +29,15 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //게임이 종료되었으면 마우스 클릭이 안되도록 막음
         if (isGameOver) return;
 
         if (Input.GetMouseButtonDown(0))
         {
+            //마우스로 클릭한 좌표를 바둑판 x,y 인덱스로 변환
             Vector2Int gridPos = view.GetGridIndex(Input.mousePosition);
 
+            //착수시도 후 결과값(가능, 금수, 승리, 무승부)을 가져옴
             PlaceResult result = model.TryPlaceStone(gridPos.x, gridPos.y, currentTurn);
 
             if (result == PlaceResult.Success)
@@ -49,6 +52,7 @@ public class GameManager : MonoBehaviour
                     return;
                 }
 
+                //돌을 뒀을때 가득 찼으면 무승부
                 if (model.IsDraw())
                 {
                     EndGame("무승부! 보드가 가득 찼습니다.");
@@ -71,6 +75,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    //게임이 종료(승리 혹은 무승부)되면 호출되는 함수
     private void EndGame(string message)
     {
         isGameOver = true;
@@ -81,6 +86,7 @@ public class GameManager : MonoBehaviour
         Debug.Log(message);
     }
 
+    //턴이 바뀔때 마다 화면의 텍스트 등을 바꿔주는 함수
     private void UpdateTurnUI()
     {
         turnText.text = $"현재 턴 : {currentTurn}";
