@@ -83,7 +83,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             int dy = directions[i, 1];
 
             //축에 놓인 돌들의 모양을 분석하여 패턴을 분석
-            LinePattern pattern = AnalyzeAxis(board,x, y, dx, dy, color, depth);
+            LinePattern pattern = AnalyzeAxis(board, x, y, dx, dy, color, depth);
 
             if (pattern == LinePattern.Overline) isOverline = true;
             else if (pattern == LinePattern.DoubleFour) fourCount += 2;
@@ -153,7 +153,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
                 if (GetWinningSpacesIndices(testLine).Count >= 2)
                 {
                     //가상 착수 후 다른 위치의 금수판단을 위한 새로운 가상 착수 좌표
-                    int realX = x + dx *(i - 5);
+                    int realX = x + dx * (i - 5);
                     int realY = y + dy * (i - 5);
                     bool isValidPoint = true;
 
@@ -172,7 +172,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
                     {
                         openFourCreators++;
                     }
-                    
+
                 }
             }
         }

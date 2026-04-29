@@ -1,12 +1,13 @@
+using System;
+using System.Collections.Generic;
 using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 
-// 멀티 게임 씬에서 색상 배정, 준비/시작, 턴 관리, 임시 착수 규칙 검사 및 돌 배치 동기화를 담당하는 스크립트
-// 현재는 빈 칸 여부와 자기 차례만 검사하며, 승패/금수/초읽기 등은 추후 별도 규칙 스크립트로 확장 예정
-
+// 멀티 게임 씬에서 색상 배정, 준비/시작, 턴 관리,
+// GomokuRule 기반 착수 규칙 검사, 금수 표시, 승패/무승부 처리를 담당하는 스크립트
 public class MultiGameManager : MonoBehaviourPunCallbacks
 {
     [Header("Board")]
@@ -23,8 +24,20 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     public TMP_Text turnText;
     public TMP_Text statusText;
 
+    [Header("Forbidden Mark")]
+    public GameObject forbiddenMarkPrefab;       // X 표시 프리팹
+    public Transform forbiddenMarkRoot;          // X 표시 부모 오브젝트
+    public bool showForbiddenOnlyToBlackPlayer = true;
+
+    [Header("Result Popup")]
+    public GameObject resultPopupPanel;
+    public TMP_Text resultTitleText;
+    public TMP_Text resultMessageText;
+
     private BoardData boardData = new BoardData();
-    private TempRule tempRule = new TempRule();
+    private GomokuRule gomokuRule = new GomokuRule(BoardData.Size);
+
+    private readonly List<GameObject> forbiddenMarks = new List<GameObject>();
 
     private const string PROP_BLACK_ACTOR = "blackActor";
     private const string PROP_WHITE_ACTOR = "whiteActor";
@@ -42,7 +55,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             InitializeRoomPropertiesIfNeeded();
         }
 
+        HideResultPopup();
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     private void Update()
@@ -134,6 +149,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
 
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
@@ -144,11 +160,13 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
 
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     // -----------------------------
@@ -219,7 +237,6 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        // 새 게임 시작 전 기존 돌 제거
         photonView.RPC(nameof(RPC_ClearBoardVisuals), RpcTarget.All);
 
         Hashtable props = new Hashtable();
@@ -246,6 +263,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         {
             photonView.RPC(nameof(RPC_RequestResign), RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
         }
+    }
+
+    public void OnClickCloseResultPopup()
+    {
+        HideResultPopup();
     }
 
     // -----------------------------
@@ -321,9 +343,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
         StoneType currentTurn = GetCurrentTurn();
 
-        if (!tempRule.CanPlaceStone(boardData, x, y, currentTurn, requestedStone))
+        if (!CanPlaceStoneByGomokuRule(x, y, currentTurn, requestedStone, out string failReason))
         {
-            SetStatus($"착수 불가: ({x}, {y})");
+            SetStatus(failReason);
             return;
         }
 
@@ -331,11 +353,99 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
         photonView.RPC(nameof(RPC_PlaceStone), RpcTarget.All, x, y, (int)requestedStone);
 
+        bool isWin = gomokuRule.CheckWin(boardData.GetArray(), x, y, requestedStone);
+        Debug.Log($"[승리판정] stone={requestedStone}, x={x}, y={y}, isWin={isWin}");
+
+        if (isWin)
+        {
+            Debug.Log("[승리판정] 승리 감지됨. 결과 팝업 RPC 호출");
+            HandleGameOverAsMaster(requestedStone, false);
+            return;
+        }
+
+        if (gomokuRule.IsDraw(boardData.GetPlacedStoneCount()))
+        {
+            HandleGameOverAsMaster(StoneType.Empty, true);
+            return;
+        }
+
         Hashtable props = new Hashtable();
         props[PROP_CURRENT_TURN] = (int)(requestedStone == StoneType.Black ? StoneType.White : StoneType.Black);
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
     }
 
+    private bool CanPlaceStoneByGomokuRule(int x, int y, StoneType currentTurn, StoneType requestedStone, out string failReason)
+    {
+        failReason = "";
+
+        if (!boardData.IsInside(x, y))
+        {
+            failReason = "착수 불가: 보드 범위를 벗어났습니다.";
+            return false;
+        }
+
+        if (boardData.GetCell(x, y) != StoneType.Empty)
+        {
+            failReason = $"착수 불가: 이미 돌이 있습니다. ({x}, {y})";
+            return false;
+        }
+
+        if (currentTurn != requestedStone)
+        {
+            failReason = "착수 불가: 현재 턴이 아닙니다.";
+            return false;
+        }
+
+        if (requestedStone == StoneType.Black && IsForbiddenOnCopiedBoard(x, y, StoneType.Black, out string forbiddenReason))
+        {
+            if (string.IsNullOrEmpty(forbiddenReason))
+                failReason = $"착수 불가: 금수 자리입니다. ({x}, {y})";
+            else
+                failReason = $"착수 불가: {forbiddenReason} 금수입니다. ({x}, {y})";
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsForbiddenOnCopiedBoard(int x, int y, StoneType stone, out string reason)
+    {
+        reason = "";
+
+        StoneType[,] copiedBoard = CopyBoardArray();
+
+        try
+        {
+            return gomokuRule.IsForbidden(copiedBoard, x, y, stone, out reason);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"금수 검사 중 오류 발생: ({x}, {y}) / {e.Message}");
+            reason = "금수 검사 오류";
+            return true;
+        }
+    }
+
+    private StoneType[,] CopyBoardArray()
+    {
+        StoneType[,] source = boardData.GetArray();
+        StoneType[,] copy = new StoneType[BoardData.Size, BoardData.Size];
+
+        for (int x = 0; x < BoardData.Size; x++)
+        {
+            for (int y = 0; y < BoardData.Size; y++)
+            {
+                copy[x, y] = source[x, y];
+            }
+        }
+
+        return copy;
+    }
+
+    // -----------------------------
+    // Resign / Game Over
+    // -----------------------------
     [PunRPC]
     private void RPC_RequestResign(int actorNumber, PhotonMessageInfo info)
     {
@@ -348,18 +458,122 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     private void HandleResignAsMaster(int actorNumber)
     {
-        StoneType stone = GetStoneByActor(actorNumber);
+        StoneType resignedStone = GetStoneByActor(actorNumber);
+
+        if (resignedStone == StoneType.Empty)
+            return;
+
+        StoneType winner = resignedStone == StoneType.Black ? StoneType.White : StoneType.Black;
+
         string playerName = GetPlayerNameByActor(actorNumber);
-        string stoneText = stone == StoneType.Black ? "흑" : "백";
+        string stoneText = resignedStone == StoneType.Black ? "흑" : "백";
 
         if (PhotonChatManager.Instance != null)
         {
             PhotonChatManager.Instance.BroadcastSystemMessage($"{playerName} ({stoneText}) 님이 기권했습니다.");
         }
 
-        ResetMatchStateOnMaster(true);
+        HandleGameOverAsMaster(winner, false);
     }
 
+    private void HandleGameOverAsMaster(StoneType winner, bool isDraw)
+    {
+        string resultMessage;
+
+        if (isDraw)
+        {
+            resultMessage = "무승부입니다.";
+        }
+        else
+        {
+            string winnerText = winner == StoneType.Black ? "흑" : "백";
+            resultMessage = $"{winnerText}돌이 승리했습니다.";
+        }
+
+        if (PhotonChatManager.Instance != null)
+        {
+            PhotonChatManager.Instance.BroadcastSystemMessage(resultMessage);
+        }
+
+        Debug.Log($"[게임종료] winner={winner}, isDraw={isDraw}, resultMessage={resultMessage}");
+
+        photonView.RPC(nameof(RPC_ShowGameResult), RpcTarget.All, (int)winner, isDraw);
+
+        Hashtable props = new Hashtable();
+        props[PROP_BLACK_READY] = false;
+        props[PROP_WHITE_START] = false;
+        props[PROP_GAME_STARTED] = false;
+        props[PROP_CURRENT_TURN] = (int)StoneType.Black;
+
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+    }
+
+    [PunRPC]
+    private void RPC_ShowGameResult(int winnerValue, bool isDraw)
+    {
+        Debug.Log($"[결과팝업 RPC] 호출됨 winnerValue={winnerValue}, isDraw={isDraw}");
+
+        StoneType winner = (StoneType)winnerValue;
+
+        ClearForbiddenMarks();
+
+        string title;
+        string message;
+
+        if (isDraw)
+        {
+            title = "무승부";
+            message = "보드가 가득 차서 무승부입니다.";
+        }
+        else
+        {
+            StoneType myStone = GetMyStone();
+            string winnerText = winner == StoneType.Black ? "흑" : "백";
+
+            if (myStone == winner)
+            {
+                title = "승리";
+                message = "승리했습니다!";
+            }
+            else if (myStone == StoneType.Empty)
+            {
+                title = "게임 종료";
+                message = $"{winnerText}돌이 승리했습니다.";
+            }
+            else
+            {
+                title = "패배";
+                message = "패배했습니다.";
+            }
+        }
+
+        ShowResultPopup(title, message);
+        SetStatus(message);
+    }
+
+    private void ShowResultPopup(string title, string message)
+    {
+        Debug.Log($"[결과팝업 표시] title={title}, message={message}, panel={(resultPopupPanel != null ? resultPopupPanel.name : "NULL")}");
+
+        if (resultPopupPanel != null)
+            resultPopupPanel.SetActive(true);
+
+        if (resultTitleText != null)
+            resultTitleText.text = title;
+
+        if (resultMessageText != null)
+            resultMessageText.text = message;
+    }
+
+    private void HideResultPopup()
+    {
+        if (resultPopupPanel != null)
+            resultPopupPanel.SetActive(false);
+    }
+
+    // -----------------------------
+    // Reset
+    // -----------------------------
     private void ResetRoomAfterPlayerLeft()
     {
         int playerCount = PhotonNetwork.PlayerList.Length;
@@ -407,6 +621,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
     }
 
+    // -----------------------------
+    // RPC Visuals
+    // -----------------------------
     [PunRPC]
     private void RPC_PlaceStone(int x, int y, int stoneValue)
     {
@@ -415,12 +632,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         boardData.SetCell(x, y, stone);
         SpawnStoneVisual(x, y, stone);
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     [PunRPC]
     private void RPC_ClearBoardVisuals()
     {
         boardData.ClearBoard();
+        ClearForbiddenMarks();
+        HideResultPopup();
 
         if (boardRoot != null)
         {
@@ -431,6 +651,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
 
         UpdateUI();
+        RefreshForbiddenMarks();
     }
 
     private void SpawnStoneVisual(int x, int y, StoneType stone)
@@ -443,13 +664,69 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             prefab = whiteStonePrefab;
 
         if (prefab == null)
-        {
             return;
-        }
 
         Vector2 pos = boardOrigin + new Vector2(x * cellSize, y * cellSize);
 
         Instantiate(prefab, pos, Quaternion.identity, boardRoot);
+    }
+
+    // -----------------------------
+    // Forbidden Mark Visuals
+    // -----------------------------
+    private void RefreshForbiddenMarks()
+    {
+        ClearForbiddenMarks();
+
+        if (!IsGameStarted())
+            return;
+
+        if (GetCurrentTurn() != StoneType.Black)
+            return;
+
+        if (showForbiddenOnlyToBlackPlayer && GetMyStone() != StoneType.Black)
+            return;
+
+        for (int x = 0; x < BoardData.Size; x++)
+        {
+            for (int y = 0; y < BoardData.Size; y++)
+            {
+                if (boardData.GetCell(x, y) != StoneType.Empty)
+                    continue;
+
+                if (IsForbiddenOnCopiedBoard(x, y, StoneType.Black, out _))
+                {
+                    SpawnForbiddenMark(x, y);
+                }
+            }
+        }
+    }
+
+    private void SpawnForbiddenMark(int x, int y)
+    {
+        if (forbiddenMarkPrefab == null)
+            return;
+
+        Transform parent = forbiddenMarkRoot != null ? forbiddenMarkRoot : boardRoot;
+
+        if (parent == null)
+            return;
+
+        Vector2 pos = boardOrigin + new Vector2(x * cellSize, y * cellSize);
+
+        GameObject mark = Instantiate(forbiddenMarkPrefab, pos, Quaternion.identity, parent);
+        forbiddenMarks.Add(mark);
+    }
+
+    private void ClearForbiddenMarks()
+    {
+        for (int i = forbiddenMarks.Count - 1; i >= 0; i--)
+        {
+            if (forbiddenMarks[i] != null)
+                Destroy(forbiddenMarks[i]);
+        }
+
+        forbiddenMarks.Clear();
     }
 
     // -----------------------------
