@@ -20,6 +20,8 @@ public class BoardData
 
     private StoneType[,] board = new StoneType[Size, Size];
 
+    public StoneType[,] GetArray() => board;
+
     public bool IsInside(int x, int y)
     {
         return x >= 0 && x < Size && y >= 0 && y < Size;
@@ -56,5 +58,14 @@ public class BoardData
                 board[x, y] = StoneType.Empty;
             }
         }
+    }
+
+    public int GetPlacedStoneCount()
+    {
+        int count = 0;
+        for (int x = 0; x < Size; x++)
+            for (int y = 0; y < Size; y++)
+                if (board[x, y] != StoneType.Empty) count++;
+        return count;
     }
 }
