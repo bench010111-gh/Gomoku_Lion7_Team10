@@ -45,6 +45,7 @@ MonoBehaviour:
   - RPC_ClearBoardVisuals
   - RPC_ReceiveSystemMessage
   - RPC_RequestResign
+  - RPC_ShowGameResult
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

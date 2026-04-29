@@ -12,7 +12,8 @@ public enum LinePattern
     None,
     OpenThree,  //열린 3 (_ o o o _)
     Four,       //4 (_ o o o o _ / x o o o o _)
-    Overline    //6목 이상 (o o o _ o o o / o o o o _ o o o)
+    Overline,   //6목 이상 (o o o _ o o o / o o o o _ o o o)
+    DoubleFour  //일직선상 4가 2개 겹친 4-4(o _ o o o _ o)
 }
 
 //착수시 금수, 범위 이탈, 자리 있음, 성공 열거형

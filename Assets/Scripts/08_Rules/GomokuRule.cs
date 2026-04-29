@@ -66,8 +66,9 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
     }
 
     //금수 판정
-    public bool IsForbidden(StoneType[,] board, int x, int y, StoneType color, int depth = 0)
+    public bool IsForbidden(StoneType[,] board, int x, int y, StoneType color, out string reason, int depth = 0)
     {
+        reason = ""; //금수 종류 기본값
         board[x, y] = color; //가상착수
 
         int openThreeCount = 0; //열린 3목 체크
@@ -82,18 +83,19 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             int dy = directions[i, 1];
 
             //축에 놓인 돌들의 모양을 분석하여 패턴을 분석
-            LinePattern pattern = AnalyzeAxis(board,x, y, dx, dy, color, depth);
+            LinePattern pattern = AnalyzeAxis(board, x, y, dx, dy, color, depth);
 
             if (pattern == LinePattern.Overline) isOverline = true;
+            else if (pattern == LinePattern.DoubleFour) fourCount += 2;
             else if (pattern == LinePattern.Four) fourCount++;
             else if (pattern == LinePattern.OpenThree) openThreeCount++;
         }
 
         board[x, y] = StoneType.Empty; //가상착수 제거(원상태 복구)
 
-        if (isOverline) return true; //장목 금수
-        if (fourCount >= 2) return true; // 44금수
-        if (openThreeCount >= 2) return true; // 33금수
+        if (isOverline) { reason = "장목"; return true; }             //장목 금수
+        if (fourCount >= 2) { reason = "4-4"; return true; }         // 44금수
+        if (openThreeCount >= 2) { reason = "3-3"; return true; }    // 33금수
 
         return false;
     }
@@ -117,20 +119,22 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
             //빈칸이 2개 이상일 때, 빈칸 사이의 거리가 딱 5칸인지 확인(5칸이면 오목이 됨으로 금수임 X_XX(<<착수)X_X)
             if (threatIndices.Count >= 2)
             {
-                bool isOpenFour = false;
-                for (int a = 0; a < threatIndices.Count; a++)
+                bool isDoubleFour = false;
+
+                if (threatIndices.Count == 2)
                 {
-                    for (int b = a + 1; b < threatIndices.Count; b++)
+                    if (Math.Abs(threatIndices[0] - threatIndices[1]) != 5)
                     {
-                        if (Math.Abs(threatIndices[a] - threatIndices[b]) == 5)
-                        {
-                            isOpenFour = true;
-                        }
+                        isDoubleFour = true;
                     }
                 }
+                else
+                {
+                    isDoubleFour = true;
+                }
 
-                if (!isOpenFour)
-                    return LinePattern.Overline;
+                if (isDoubleFour)
+                    return LinePattern.DoubleFour;
             }
 
             return LinePattern.Four; //위협이 1개거나 , 열린 4인 경우 정상적으로 1개의 4판정
@@ -149,14 +153,14 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
                 if (GetWinningSpacesIndices(testLine).Count >= 2)
                 {
                     //가상 착수 후 다른 위치의 금수판단을 위한 새로운 가상 착수 좌표
-                    int realX = x + dx *(i - 5);
+                    int realX = x + dx * (i - 5);
                     int realY = y + dy * (i - 5);
                     bool isValidPoint = true;
 
                     //무한 루프 방어, 거짓33을 찾기
                     if (depth == 0)
                     {
-                        if (IsForbidden(board, realX, realY, color, depth + 1))
+                        if (IsForbidden(board, realX, realY, color, out _, depth + 1))
                         {
                             //만약 수를 둔 후 다른 수가 금수라면 거짓3
                             isValidPoint = false;
@@ -168,7 +172,7 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
                     {
                         openFourCreators++;
                     }
-                    
+
                 }
             }
         }
