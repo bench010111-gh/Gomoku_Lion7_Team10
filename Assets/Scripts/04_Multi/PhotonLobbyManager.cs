@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+// using System.Text; // Photon 진단 정보 출력용. 필요 시 다시 활성화.
 using ExitGames.Client.Photon;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,12 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
     [Header("Top UI")]
     public TMP_Text statusText;
     public TMP_Text playerName;
+
+    /*
+    [Header("Debug")]
+    public bool showPhotonDebugStatus = true;
+    public float debugStatusRefreshInterval = 1f;
+    */
 
     [Header("Next Scene")]
     public string multiGameSceneName = "07_MultiGameScene";
@@ -40,8 +47,26 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     private RoomInfo selectedRoomInfo;
 
+    /*
+    // Photon 진단 정보 출력용. 필요 시 다시 활성화.
+    private string lastStatusMessage = "";
+    private float nextDebugStatusRefreshTime;
+
+    private int lastReceivedRoomListCount = -1;
+    private int totalRoomListUpdateCount = 0;
+    private string lastDisconnectCause = "없음";
+    private string lastCreateRoomFail = "없음";
+    private string lastJoinRoomFail = "없음";
+    private string lastJoinedRoomName = "없음";
+    private string lastCreatedRoomName = "없음";
+    */
+
     private void Start()
     {
+        // Photon 자동 리전 선택 방지.
+        // FixedRegion이 비어 있으면 일부 PC에서 jp 등 다른 리전으로 접속되어 방 목록이 갈라질 수 있음.
+        PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "kr";
+
         string playerNickname = "Guest";
 
         if (UserSession.Instance != null && !string.IsNullOrEmpty(UserSession.Instance.nickname))
@@ -62,6 +87,8 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         if (createRoomPopup != null) createRoomPopup.SetActive(false);
         if (joinRoomPopup != null) joinRoomPopup.SetActive(false);
 
+        SetStatus("멀티 로비 초기화 중...");
+
         if (PhotonNetwork.InRoom)
         {
             SetStatus("이전 방에서 나가는 중...");
@@ -72,8 +99,26 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         EnsurePhotonLobby();
     }
 
+    /*
+    // Photon 진단 정보 주기적 갱신용. 필요 시 다시 활성화.
+    private void Update()
+    {
+        if (!showPhotonDebugStatus)
+            return;
+
+        if (Time.time < nextDebugStatusRefreshTime)
+            return;
+
+        nextDebugStatusRefreshTime = Time.time + debugStatusRefreshInterval;
+        RefreshStatusText();
+    }
+    */
+
     private void EnsurePhotonLobby()
     {
+        // Photon 자동 리전 선택 방지. 연결 전에 kr로 강제.
+        PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "kr";
+
         if (!PhotonNetwork.IsConnected)
         {
             SetStatus("Photon 연결 중...");
@@ -103,9 +148,14 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         SetStatus("Photon 연결 준비 중...");
     }
 
+    public override void OnConnected()
+    {
+        SetStatus("Photon 서버 연결됨");
+    }
+
     public override void OnConnectedToMaster()
     {
-        SetStatus("Photon 연결 성공");
+        SetStatus("Photon 마스터 서버 연결 성공");
 
         if (!PhotonNetwork.InLobby)
         {
@@ -126,24 +176,34 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     public override void OnDisconnected(DisconnectCause cause)
     {
+        // lastDisconnectCause = cause.ToString(); // 진단용. 필요 시 활성화.
         SetStatus("Photon 연결이 끊어졌습니다.");
         Debug.LogWarning("Photon disconnected: " + cause);
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
-        foreach (RoomInfo info in roomList)
+        /*
+        // Photon 진단용. 필요 시 다시 활성화.
+        totalRoomListUpdateCount++;
+        lastReceivedRoomListCount = roomList != null ? roomList.Count : -1;
+        */
+
+        if (roomList != null)
         {
-            if (info.RemovedFromList)
+            foreach (RoomInfo info in roomList)
             {
-                if (cachedRoomList.ContainsKey(info.Name))
+                if (info.RemovedFromList)
                 {
-                    cachedRoomList.Remove(info.Name);
+                    if (cachedRoomList.ContainsKey(info.Name))
+                    {
+                        cachedRoomList.Remove(info.Name);
+                    }
                 }
-            }
-            else
-            {
-                cachedRoomList[info.Name] = info;
+                else
+                {
+                    cachedRoomList[info.Name] = info;
+                }
             }
         }
 
@@ -160,6 +220,7 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
         currentSearchKeyword = searchRoomInput.text.Trim().ToLower();
         RefreshRoomListUI();
+        SetStatus("방 검색 완료");
     }
 
     public void OnClickCancelSearch()
@@ -172,13 +233,24 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
 
         RefreshRoomListUI();
+        SetStatus("방 검색 취소");
     }
+
+    /*
+    // Photon 상태 수동 갱신 버튼용. 필요 시 다시 활성화.
+    public void OnClickRefreshPhotonStatus()
+    {
+        SetStatus("Photon 상태 수동 갱신");
+        EnsurePhotonLobby();
+    }
+    */
 
     private void RefreshRoomListUI()
     {
         if (roomListContent == null || roomListItemPrefab == null)
         {
             Debug.LogWarning("Room list UI is not assigned.");
+            SetStatus("방 목록 UI 연결 누락");
             return;
         }
 
@@ -280,6 +352,13 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsConnectedAndReady)
         {
             SetStatus("Photon 연결이 아직 준비되지 않았습니다.");
+            return;
+        }
+
+        if (!PhotonNetwork.InLobby)
+        {
+            SetStatus("아직 로비 입장 전입니다. 로비 재입장 시도 중...");
+            EnsurePhotonLobby();
             return;
         }
 
@@ -390,6 +469,13 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
             return;
         }
 
+        if (!PhotonNetwork.InLobby)
+        {
+            SetStatus("아직 로비 입장 전입니다. 로비 재입장 시도 중...");
+            EnsurePhotonLobby();
+            return;
+        }
+
         if (selectedRoomInfo == null)
         {
             SetStatus("선택된 방 정보가 없습니다.");
@@ -437,11 +523,13 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     public override void OnCreatedRoom()
     {
+        // lastCreatedRoomName = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "이름 확인 불가"; // 진단용
         SetStatus("방 생성 완료");
     }
 
     public override void OnJoinedRoom()
     {
+        // lastJoinedRoomName = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "이름 확인 불가"; // 진단용
         SetStatus("방 입장 완료");
         SceneManager.LoadScene(multiGameSceneName);
     }
@@ -454,18 +542,21 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
+        // lastCreateRoomFail = $"{returnCode} / {message}"; // 진단용
         SetStatus("방 생성 실패");
         Debug.LogWarning($"Create room failed: {returnCode} / {message}");
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
+        // lastJoinRoomFail = $"{returnCode} / {message}"; // 진단용
         SetStatus("방 입장 실패");
         Debug.LogWarning($"Join room failed: {returnCode} / {message}");
     }
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
+        // lastJoinRoomFail = $"{returnCode} / {message}"; // 진단용
         SetStatus("방 입장 실패");
         Debug.LogWarning($"Join random failed: {returnCode} / {message}");
     }
@@ -478,5 +569,132 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         }
 
         Debug.Log(message);
+
+        /*
+        // Photon 진단 정보 출력용. 필요 시 다시 활성화.
+        lastStatusMessage = message;
+        RefreshStatusText();
+        */
     }
+
+    /*
+    // -----------------------------
+    // Photon Debug Status
+    // 문제 진단 필요 시 이 영역과 using System.Text, Debug 필드, Update()를 다시 활성화.
+    // -----------------------------
+    private void RefreshStatusText()
+    {
+        if (statusText == null)
+            return;
+
+        if (!showPhotonDebugStatus)
+        {
+            statusText.text = lastStatusMessage;
+            return;
+        }
+
+        statusText.text = BuildPhotonDebugStatus();
+    }
+
+    private string BuildPhotonDebugStatus()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.AppendLine($"상태: {lastStatusMessage}");
+        sb.AppendLine();
+
+        sb.AppendLine("[Photon 진단]");
+        sb.AppendLine($"NickName: {PhotonNetwork.NickName}");
+        sb.AppendLine($"GameVersion: {PhotonNetwork.GameVersion}");
+        sb.AppendLine($"AppVersion: {PhotonNetwork.AppVersion}");
+        sb.AppendLine($"CloudRegion: {SafeString(PhotonNetwork.CloudRegion)}");
+        sb.AppendLine($"Server: {PhotonNetwork.Server}");
+        sb.AppendLine($"ClientState: {PhotonNetwork.NetworkClientState}");
+        sb.AppendLine($"IsConnected: {PhotonNetwork.IsConnected}");
+        sb.AppendLine($"IsConnectedAndReady: {PhotonNetwork.IsConnectedAndReady}");
+        sb.AppendLine($"InLobby: {PhotonNetwork.InLobby}");
+        sb.AppendLine($"InRoom: {PhotonNetwork.InRoom}");
+        sb.AppendLine($"Ping: {PhotonNetwork.GetPing()} ms");
+        sb.AppendLine($"CountOfRooms: {PhotonNetwork.CountOfRooms}");
+        sb.AppendLine($"CountOfPlayers: {PhotonNetwork.CountOfPlayers}");
+        sb.AppendLine($"CountOfPlayersOnMaster: {PhotonNetwork.CountOfPlayersOnMaster}");
+        sb.AppendLine($"CountOfPlayersInRooms: {PhotonNetwork.CountOfPlayersInRooms}");
+
+        if (PhotonNetwork.CurrentLobby != null)
+        {
+            sb.AppendLine($"LobbyName: {SafeString(PhotonNetwork.CurrentLobby.Name)}");
+            sb.AppendLine($"LobbyType: {PhotonNetwork.CurrentLobby.Type}");
+        }
+        else
+        {
+            sb.AppendLine("Lobby: null");
+        }
+
+        if (PhotonNetwork.CurrentRoom != null)
+        {
+            sb.AppendLine($"CurrentRoom: {PhotonNetwork.CurrentRoom.Name}");
+            sb.AppendLine($"Room Open/Visible: {PhotonNetwork.CurrentRoom.IsOpen}/{PhotonNetwork.CurrentRoom.IsVisible}");
+            sb.AppendLine($"Room Players: {PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.MaxPlayers}");
+        }
+        else
+        {
+            sb.AppendLine("CurrentRoom: null");
+        }
+
+        AppSettings appSettings = PhotonNetwork.PhotonServerSettings != null
+            ? PhotonNetwork.PhotonServerSettings.AppSettings
+            : null;
+
+        if (appSettings != null)
+        {
+            sb.AppendLine();
+            sb.AppendLine("[Photon 설정]");
+            sb.AppendLine($"FixedRegion: {SafeString(appSettings.FixedRegion)}");
+            sb.AppendLine($"Protocol: {appSettings.Protocol}");
+            sb.AppendLine($"UseNameServer: {appSettings.UseNameServer}");
+            sb.AppendLine($"Server: {SafeString(appSettings.Server)}");
+            sb.AppendLine($"Port: {appSettings.Port}");
+            sb.AppendLine($"AppIdRealtime 앞 8자리: {MaskAppId(appSettings.AppIdRealtime)}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("[방 목록 진단]");
+        sb.AppendLine($"RoomListUpdate 받은 횟수: {totalRoomListUpdateCount}");
+        sb.AppendLine($"마지막 RoomListUpdate 개수: {lastReceivedRoomListCount}");
+        sb.AppendLine($"캐시된 방 개수: {cachedRoomList.Count}");
+        sb.AppendLine($"검색어: '{currentSearchKeyword}'");
+
+        sb.AppendLine();
+        sb.AppendLine("[최근 오류]");
+        sb.AppendLine($"DisconnectCause: {lastDisconnectCause}");
+        sb.AppendLine($"CreateRoomFailed: {lastCreateRoomFail}");
+        sb.AppendLine($"JoinRoomFailed: {lastJoinRoomFail}");
+
+        sb.AppendLine();
+        sb.AppendLine("[최근 방]");
+        sb.AppendLine($"LastCreatedRoom: {lastCreatedRoomName}");
+        sb.AppendLine($"LastJoinedRoom: {lastJoinedRoomName}");
+
+        return sb.ToString();
+    }
+
+    private string SafeString(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "(empty)";
+
+        return value;
+    }
+
+    private string MaskAppId(string appId)
+    {
+        if (string.IsNullOrEmpty(appId))
+            return "(empty)";
+
+        if (appId.Length <= 8)
+            return appId;
+
+        return appId.Substring(0, 8) + "...";
+    }
+    */
 }

@@ -771,8 +771,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "\uC624\uBAA9\uB9E8"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 3bb15342685956048b17d2fd6059a63a, type: 2}
-  m_sharedMaterial: {fileID: -7084262657803652255, guid: 3bb15342685956048b17d2fd6059a63a, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: d1b8b42a2f21c8d42a86104db44c5d40, type: 2}
+  m_sharedMaterial: {fileID: -8796969669346490582, guid: d1b8b42a2f21c8d42a86104db44c5d40, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

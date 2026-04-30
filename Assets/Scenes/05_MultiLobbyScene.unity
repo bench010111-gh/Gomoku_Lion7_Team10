@@ -3546,8 +3546,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 15
+  m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4758,6 +4758,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PhotonLobbyManager
   statusText: {fileID: 1353178565}
   playerName: {fileID: 1510118325}
+  showPhotonDebugStatus: 1
+  debugStatusRefreshInterval: 1
   multiGameSceneName: 07_MultiGameScene
   createRoomPopup: {fileID: 1237721022}
   createRoomNameInput: {fileID: 377719373}
@@ -4770,8 +4772,6 @@ MonoBehaviour:
   roomListContent: {fileID: 808873648}
   roomListItemPrefab: {fileID: 2028762866993539726, guid: aff4207ab70b5284fa854a63f4a4f885, type: 3}
   searchRoomInput: {fileID: 2087491274}
-  showPhotonDebugOnStatus: 1
-  maxStatusLogLines: 14
 --- !u!4 &1569874648
 Transform:
   m_ObjectHideFlags: 0
