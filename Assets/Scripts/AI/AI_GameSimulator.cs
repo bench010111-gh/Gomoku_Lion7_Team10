@@ -13,6 +13,9 @@ public class AI_GameSimulator : MonoBehaviour
     [SerializeField] AI ai; 
     [SerializeField] AI_Cell cellPrefab;
 
+    [SerializeField] int timeLimit = 3000;
+    [SerializeField] int maxDepth = 10; 
+
     int currentTurn = 1;
 
     int myTurn = -1;
@@ -88,7 +91,7 @@ public class AI_GameSimulator : MonoBehaviour
 
         yield return null;
 
-        Vector2Int bestSelection = ai.GetBestMove(board, aiTurn);
+        Vector2Int bestSelection = ai.GetBestMove(board, aiTurn, timeLimit, maxDepth);
         PlaceStone(bestSelection, aiTurn);
 
         // ´ë±â Áß UI ¼û±è

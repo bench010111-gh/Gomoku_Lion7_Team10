@@ -19,7 +19,7 @@ public class AI : MonoBehaviour
     const int CLOSED_TWO = 10;
     const int CENTER_BONUS = 5;
 
-    const int FORBIDDEN_SCORE = -999999;
+    const int FORBIDDEN_SCORE = -99999999;
     const int INF = int.MaxValue / 2;
 
     // 4방향 벡터
@@ -27,7 +27,7 @@ public class AI : MonoBehaviour
     private readonly int[] dirY = { 0, 1, -1, 1 };
 
     //  Iterative Deepening 상태
-    private long timeLimit = 3000;
+    private long timeLimit;
     private bool isTimeOut;
     private Stopwatch stopwatch; 
     private Vector2Int currentBestMove;
@@ -36,7 +36,7 @@ public class AI : MonoBehaviour
     public float defenseWeight = 1.2f; 
 
     // 시간 제한(ms) 내에서 Iterative Deepening으로 최선의 수를 반환합니다.
-    public Vector2Int GetBestMove(int[,] board, int player, long timeLimitMs = 3000, int maxDepth = 14)
+    public Vector2Int GetBestMove(int[,] board, int player, long timeLimitMs = 3000, int maxDepth = 10)
     {
         timeLimit = timeLimitMs;
         stopwatch = Stopwatch.StartNew();
