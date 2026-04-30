@@ -363,12 +363,23 @@ public class AI : MonoBehaviour
 
     // 후보를 (내 점수 + 상대 점수)로 정렬
     // maximizing=true → 내림차순, false → 오름차순
-    private List<(Vector2Int pos, int score)> SortedCandidates(HashSet<Vector2Int> candidates, int current, int opponent,int[,] board, bool maximizing)
+    private List<(Vector2Int pos, int score)> SortedCandidates(HashSet<Vector2Int> candidates, int current, int opponent, int[,] board, bool maximizing)
     {
         var list = new List<(Vector2Int, int score)>();
 
         foreach (var c in candidates)
         {
+            // 흑 차례일 때 금수 자리 제외
+            if (current == 1)
+            {
+                board[c.x, c.y] = 1;
+                bool forbidden = IsConnect6(c.x, c.y, 1, board)
+                              || IsDoubleFour(c.x, c.y, 1, board)
+                              || IsDoubleOpenThree(c.x, c.y, 1, board);
+                board[c.x, c.y] = 0;
+                if (forbidden) continue;
+            }
+
             int myScore = Evaluate(c.x, c.y, current, board);
             int opScore = Evaluate(c.x, c.y, opponent, board);
             list.Add((c, myScore + opScore));
@@ -403,33 +414,6 @@ public class AI : MonoBehaviour
                 + CountConnected(x, y, dirX[i], dirY[i], player, board)
                 + CountConnected(x, y, -dirX[i], -dirY[i], player, board);
             if (count >= 6) return true;
-        }
-        return false;
-    }
-    bool IsFour(int x, int y, int dx, int dy, int player, int[,] board)
-    {
-        int[] buf = new int[9];
-
-        for (int i = -4; i <= 4; i++)
-        {
-            int nx = x + dx * i, ny = y + dy * i;
-            buf[i + 4] = !IsValidPos(nx, ny) ? -1
-                       : (i == 0) ? player
-                       : board[nx, ny];
-        }
-
-        for (int i = 0; i <= 4; i++)
-        {
-            int cnt = 0, empty = 0, blocked = 0;
-            for (int j = i; j < i + 5; j++)
-            {
-                if (buf[j] == player) cnt++;
-                else if (buf[j] == 0) empty++;
-                else blocked++;
-            }
-
-            if (blocked > 0) continue;
-            if (cnt == 4 && empty == 1) return true;
         }
         return false;
     }
@@ -472,8 +456,38 @@ public class AI : MonoBehaviour
     {
         int count = 0;
         for (int i = 0; i < 4; i++)
-            if (IsFour(x, y, dirX[i], dirY[i], player, board)) count++;
+            count += CountFourInDirection(x, y, dirX[i], dirY[i], player, board);
         return count;
+    }
+    int CountFourInDirection(int x, int y, int dx, int dy, int player, int[,] board)
+    {
+        int[] buffer = new int[9];
+
+        for (int i = -4; i <= 4; i++)
+        {
+            int nx = x + dx * i, ny = y + dy * i;
+            buffer[i + 4] = !IsValidPos(nx, ny) ? -1
+                       : (i == 0) ? player
+                       : board[nx, ny];
+        }
+
+        var fourKeys = new HashSet<string>();
+
+        for (int i = 0; i <= 4; i++)
+        {
+            int cnt = 0, emptyIdx = -1, blocked = 0;
+            var stones = new List<int>();
+            for (int j = i; j < i + 5; j++)
+            {
+                if (buffer[j] == player) { cnt++; stones.Add(j); }
+                else if (buffer[j] == 0) emptyIdx = j;
+                else { blocked++; break; }
+            }
+            if (blocked > 0) continue;
+            if (cnt == 4 && emptyIdx != -1)
+                fourKeys.Add(string.Join(",", stones)); // 돌 위치로 키
+        }
+        return fourKeys.Count;
     }
     bool IsDoubleFour(int x, int y, int player, int[,] board) => CountFour(x, y, player, board) >= 2;
     bool IsOpenThree(int x, int y, int dx, int dy, int player, int[,] board)
