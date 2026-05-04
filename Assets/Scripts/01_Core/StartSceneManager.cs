@@ -18,7 +18,7 @@ public class StartSceneManager : MonoBehaviour
     {
         if (guideText != null)
         {
-            guideText.text = "아무 단추를 눌러 시작";
+            guideText.text = "아무 단추를 눌러 시작합니다";
         }
     }
 
