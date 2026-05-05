@@ -23,7 +23,7 @@ public class MainLobbyManager : MonoBehaviour
     {
         if (nicknameText != null && UserSession.Instance != null)
         {
-            nicknameText.text = $"닉네임: {UserSession.Instance.nickname}";
+            nicknameText.text = $"회원명: {UserSession.Instance.nickname}";
         }
 
         if (logoutPopupPanel != null)
@@ -61,7 +61,7 @@ public class MainLobbyManager : MonoBehaviour
 
         if (bro.IsSuccess())
         {
-            Debug.Log("로그아웃 성공");
+            Debug.Log("접속종료 성공");
 
             if (UserSession.Instance != null)
             {
@@ -73,7 +73,7 @@ public class MainLobbyManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("로그아웃 실패: " + bro);
+            Debug.LogError("접속종료 실패: " + bro);
         }
     }
 
