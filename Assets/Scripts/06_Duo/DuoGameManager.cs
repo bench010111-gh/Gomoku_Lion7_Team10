@@ -15,6 +15,7 @@ public class DuoGameManager : MonoBehaviour
     public GameObject blackStonePrefab;
     public GameObject whiteStonePrefab;
     public GameObject forbiddenMarkerPrefab;
+    public GameObject lastMoveMarkerPrefab;
 
     [Header("Board UI")]
     public TMP_Text turnText;
@@ -31,18 +32,31 @@ public class DuoGameManager : MonoBehaviour
     public GameObject gameOverPanel;
     public TMP_Text gameOverText;
 
+    [Header("Score UI")]
+    public TMP_Text p1BlackScoreText;
+    public TMP_Text p1WhiteScoreText;
+    public TMP_Text p2BlackScoreText;
+    public TMP_Text p2WhiteScoreText;
+
     private BoardData boardData = new BoardData();
     private GomokuRule rule;
     private StoneType currentTurn = StoneType.Black;
     private bool isGameOver = false;
 
     private Coroutine statusCoroutine;
-
     private List<GameObject> forbiddenMarkers = new List<GameObject>();
+    private GameObject currentLastMoveMarker;
+
+    private int p1BlackScore = 0;
+    private int p1WhiteScore = 0;
+    private int p2BlackScore = 0;
+    private int p2WhiteScore = 0;
+    private StoneType winColor = StoneType.Empty;
 
     private void Start()
     {
         rule = new GomokuRule(BoardData.Size);
+        UpdateScoreUI();
         RestartGame();
     }
 
@@ -97,13 +111,13 @@ public class DuoGameManager : MonoBehaviour
 
         if (rule.CheckWin(boardData.GetArray(), x, y, currentTurn))
         {
-            EndGame($"{(currentTurn == StoneType.Black ? "흑돌" : "백돌")} 승리!");
+            EndGame($"{(currentTurn == StoneType.Black ? "흑돌" : "백돌")} 승리!", currentTurn);
             return;
         }
 
         if (rule.IsDraw(boardData.GetPlacedStoneCount()))
         {
-            EndGame("무승부!");
+            EndGame("무승부!", StoneType.Empty);
             return;
         }
 
@@ -114,9 +128,7 @@ public class DuoGameManager : MonoBehaviour
     {
         currentTurn = (currentTurn == StoneType.Black) ? StoneType.White : StoneType.Black;
         UpdateUI();
-        //SetStatus(""); // 턴이 바뀌면 이전 상태 메시지 지우기
         ResetTimer();
-
         UpdateForbiddenMarkers();
     }
 
@@ -160,12 +172,27 @@ public class DuoGameManager : MonoBehaviour
         GameObject prefab = (color == StoneType.Black) ? blackStonePrefab : whiteStonePrefab;
         Vector2 pos = boardOrigin + new Vector2(x * cellSize.x, y * cellSize.y);
         Instantiate(prefab, pos, Quaternion.identity, boardRoot);
+
+        if (lastMoveMarkerPrefab != null)
+        {
+            if (currentLastMoveMarker == null)
+            {
+                currentLastMoveMarker = Instantiate(lastMoveMarkerPrefab, pos, Quaternion.identity, boardRoot);
+            }
+            else
+            {
+                currentLastMoveMarker.transform.position = pos;
+
+                currentLastMoveMarker.transform.SetAsLastSibling();
+            }
+        }
     }
 
-    private void EndGame(string message)
+    private void EndGame(string message, StoneType winner)
     {
         isGameOver = true;
         isTimerRunning = false;
+        winColor = winner;
 
         UpdateForbiddenMarkers();
 
@@ -194,9 +221,10 @@ public class DuoGameManager : MonoBehaviour
             }
         }
 
+        currentLastMoveMarker = null;
+
         UpdateUI();
         ResetTimer();
-
         UpdateForbiddenMarkers();
 
         if (gameOverPanel != null)
@@ -285,6 +313,44 @@ public class DuoGameManager : MonoBehaviour
         {
             timerText.text = $"{Mathf.CeilToInt(currentTimer)}초";
         }
+    }
+
+    public void SelectWinner(int playerNum)
+    {
+        if (winColor != StoneType.Empty)
+        {
+            if (winColor == StoneType.Black)
+            {
+                if (playerNum == 1)
+                    p1BlackScore++;
+                if (playerNum == 2)
+                    p2BlackScore++;
+            }
+            else if (winColor == StoneType.White)
+            {
+                if (playerNum == 1)
+                    p1WhiteScore++;
+                if(playerNum == 2)
+                    p2WhiteScore++;
+            }
+
+            UpdateScoreUI();
+        }
+
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(false);
+        }
+
+        SetStatus("다시 시작을 눌러주세요");
+    }
+
+    private void UpdateScoreUI()
+    {
+        if (p1BlackScoreText != null) p1BlackScoreText.text = $"흑 : {p1BlackScore}";
+        if (p1WhiteScoreText != null) p1WhiteScoreText.text = $"백 : {p1WhiteScore}";
+        if (p2BlackScoreText != null) p2BlackScoreText.text = $"흑 : {p2BlackScore}";
+        if (p2WhiteScoreText != null) p2WhiteScoreText.text = $"백 : {p2WhiteScore}";
     }
 }
 
