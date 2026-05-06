@@ -18,7 +18,7 @@ public class StartSceneManager : MonoBehaviour
     {
         if (guideText != null)
         {
-            guideText.text = "아무 키나 눌러 시작";
+            guideText.text = "아무 단추를 눌러 시작합니다";
         }
     }
 
@@ -39,7 +39,7 @@ public class StartSceneManager : MonoBehaviour
 
             if (guideText != null)
             {
-                guideText.text = "다시 클릭하면 로그인 화면으로 이동합니다";
+                guideText.text = "다시 단추를 누르면\n회원접속 화면으로 이동합니다";
             }
         }
         else
