@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class DuoGameManager : MonoBehaviour
 {
@@ -69,15 +70,12 @@ public class DuoGameManager : MonoBehaviour
 
     private void Update()
     {
-        if (handCursorTransform != null && !isGameOver && !isCountingDown)
+        if (isGameOver || !isTimerRunning || isCountingDown)
         {
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorldPos.z = 0f;
-            handCursorTransform.position = mouseWorldPos + handOffset;
-        }
-
-        if (isGameOver || !isTimerRunning || isCountingDown) 
+            Cursor.visible = true;
             return;
+        }
+           
 
         currentTimer -= Time.deltaTime;
         UpdateTimerUI();
@@ -88,6 +86,8 @@ public class DuoGameManager : MonoBehaviour
             UpdateTimerUI();
             OnTimeOut();
         }
+
+        UpdateCursorVisibility();
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -105,6 +105,11 @@ public class DuoGameManager : MonoBehaviour
 
         if (boardData.IsInside(x, y) && boardData.GetCell(x, y) == StoneType.Empty)
         {
+            if (handCursorTransform != null)
+            {
+                StartCoroutine(HandClickAnimationRoutine());
+            }
+
             PlaceStone(x, y);
         }
     }
@@ -152,6 +157,37 @@ public class DuoGameManager : MonoBehaviour
         if (handSpriteRenderer != null)
         {
             handSpriteRenderer.sprite = (currentTurn == StoneType.Black) ? blackHandSprite : whiteHandSprite;
+        }
+    }
+
+    private void UpdateCursorVisibility()
+    {
+        if (handSpriteRenderer != null && !handSpriteRenderer.enabled)
+        {
+            handSpriteRenderer.enabled = true;
+        }
+
+        bool isOverUI = EventSystem.current.IsPointerOverGameObject();
+
+        bool isOutsideScreen = Input.mousePosition.x <= 0 || Input.mousePosition.x >= Screen.width ||
+                               Input.mousePosition.y <= 0 || Input.mousePosition.y >= Screen.height;
+
+        if (isOverUI || isOutsideScreen)
+        {
+            if (!Cursor.visible)
+                Cursor.visible = true;
+        }
+       else
+        {
+            if (Cursor.visible)
+                Cursor.visible = false;
+
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorldPos.z = 0f;
+            if (handCursorTransform != null)
+            {
+                handCursorTransform.position = mouseWorldPos + handOffset;
+            }
         }
     }
 
@@ -283,7 +319,46 @@ public class DuoGameManager : MonoBehaviour
 
         UpdateForbiddenMarkers();
     }
-    
+
+    private IEnumerator HandClickAnimationRoutine()
+    {
+        Vector3 originalScale = handCursorTransform.localScale;
+        Vector3 pressScale = originalScale * 0.85f;
+
+        Quaternion originalRot = handCursorTransform.rotation;
+        Quaternion pressRot = originalRot * Quaternion.Euler(0, 0, 15f);
+
+        float downDuration = 0.04f;
+        float timer = 0f;
+
+        while (timer < downDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / downDuration;
+
+            handCursorTransform.localScale = Vector3.Lerp(originalScale, pressScale, t);
+            handCursorTransform.rotation = Quaternion.Lerp(originalRot, pressRot, t);
+            yield return null;
+        }
+
+        timer = 0f;
+        float upDuration = 0.07f;
+
+        while (timer < upDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / upDuration;
+
+            handCursorTransform.localScale = Vector3.Lerp(pressScale, originalScale, t);
+            handCursorTransform.rotation = Quaternion.Lerp(pressRot, originalRot, t);
+            yield return null;
+        }
+
+        handCursorTransform.localScale = originalScale;
+        handCursorTransform.rotation = originalRot;
+    }
+
+
     private void UpdateUI()
     {
         if (turnText != null)
