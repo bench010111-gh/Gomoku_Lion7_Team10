@@ -116,12 +116,12 @@ TextureImporter:
       name: soundbar_btn_0
       rect:
         serializedVersion: 2
-        x: 22
-        y: 4
-        width: 55
-        height: 93
+        x: 23
+        y: 5
+        width: 53
+        height: 91
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 501671bcb9e88bd4a9ee74b96282e05e
     internalID: 0
     vertices: []
     indices: 

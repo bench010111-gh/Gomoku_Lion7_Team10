@@ -227,11 +227,13 @@ public class AudioManager : MonoBehaviour
 
     public void SetBGMVolume(float value)
     {
+        value = Mathf.Clamp(value, 0.0001f, 1f);
         mixer.SetFloat("BGMVolume", Mathf.Log10(value) * 20);
     }
 
     public void SetSFXVolume(float value)
     {
+        value = Mathf.Clamp(value, 0.0001f, 1f);
         mixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
     }
 }
