@@ -38,6 +38,13 @@ public class DuoGameManager : MonoBehaviour
     public TMP_Text p2BlackScoreText;
     public TMP_Text p2WhiteScoreText;
 
+    [Header("Hand Cursor")]
+    public Transform handCursorTransform;
+    public SpriteRenderer handSpriteRenderer;
+    public Sprite blackHandSprite;
+    public Sprite whiteHandSprite;
+    public Vector3 handOffset = Vector3.zero;
+
     private BoardData boardData = new BoardData();
     private GomokuRule rule;
     private StoneType currentTurn = StoneType.Black;
@@ -62,6 +69,13 @@ public class DuoGameManager : MonoBehaviour
 
     private void Update()
     {
+        if (handCursorTransform != null && !isGameOver && !isCountingDown)
+        {
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorldPos.z = 0f;
+            handCursorTransform.position = mouseWorldPos + handOffset;
+        }
+
         if (isGameOver || !isTimerRunning || isCountingDown) 
             return;
 
@@ -130,6 +144,15 @@ public class DuoGameManager : MonoBehaviour
         UpdateUI();
         ResetTimer();
         UpdateForbiddenMarkers();
+        UpdateHandCursor();
+    }
+
+    private void UpdateHandCursor()
+    {
+        if (handSpriteRenderer != null)
+        {
+            handSpriteRenderer.sprite = (currentTurn == StoneType.Black) ? blackHandSprite : whiteHandSprite;
+        }
     }
 
     private void UpdateForbiddenMarkers()
@@ -226,6 +249,7 @@ public class DuoGameManager : MonoBehaviour
         UpdateUI();
         ResetTimer();
         UpdateForbiddenMarkers();
+        UpdateHandCursor();
 
         if (gameOverPanel != null)
         {
