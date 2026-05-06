@@ -105,3 +105,7 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# 테스트용 스크립트 씬 파일
+Assets/Client_KSL/
+Assets/Client_KSL.meta

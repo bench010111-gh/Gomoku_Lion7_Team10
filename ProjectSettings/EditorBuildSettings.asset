@@ -5,8 +5,32 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/01_StartScene.unity
+    guid: 5f9e7a380bc3f774ab011222e91a4767
+  - enabled: 1
+    path: Assets/Scenes/02_LoginScene.unity
+    guid: 7fa50bbc52a2f3041be5e1fdeb0c4c78
+  - enabled: 1
+    path: Assets/Scenes/03_MainLobbyScene.unity
+    guid: 793ef2b05558201438ed432f02a2759a
+  - enabled: 1
+    path: Assets/Scenes/04_SingleLobbyScene.unity
+    guid: b2e2d72ad2c7ec64d9b3bb9e79e97d34
+  - enabled: 1
+    path: Assets/Scenes/05_MultiLobbyScene.unity
+    guid: 84bf4c8312a195d469aba2a0e0ac5c24
+  - enabled: 1
+    path: Assets/Scenes/06_DuoLobbyScene.unity
+    guid: c015d929bd2996d46a9224f9000ae373
+  - enabled: 1
+    path: Assets/Scenes/07_MultiGameScene.unity
+    guid: 93f25df546330704994f4b036ba13957
+  - enabled: 1
+    path: Assets/Scenes/08_DuoGameScene.unity
+    guid: c8f3fba91d8f92b4f8fd46d89b83f144
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
