@@ -7,6 +7,13 @@ using UnityEngine.EventSystems;
 
 public class DuoGameManager : MonoBehaviour
 {
+    private class MoveRecord
+    {
+        public int x;
+        public int y;
+        public GameObject stoneObj;
+    }
+
     [Header("Board Setting")]
     public Vector2 boardOrigin = Vector2.zero;
     public Vector2 cellSize = new Vector2(1f, 1f);
@@ -21,17 +28,13 @@ public class DuoGameManager : MonoBehaviour
     [Header("Board UI")]
     public TMP_Text turnText;
     public TMP_Text statusText;
-    public TMP_Text timerText;
-
-    [Header("Timer Setting")]
-    public float timeLimit = 30f;
-    private float currentTimer;
-    private bool isTimerRunning;
-    private bool isCountingDown = false;
 
     [Header("Game Over UI")]
     public GameObject gameOverPanel;
     public TMP_Text gameOverText;
+
+    [Header("Button UI")]
+    public TMP_Text startButtonText;
 
     [Header("Score UI")]
     public TMP_Text p1BlackScoreText;
@@ -54,6 +57,7 @@ public class DuoGameManager : MonoBehaviour
     private Coroutine statusCoroutine;
     private List<GameObject> forbiddenMarkers = new List<GameObject>();
     private GameObject currentLastMoveMarker;
+    private Stack<MoveRecord> moveHistory = new Stack<MoveRecord>();
 
     private int p1BlackScore = 0;
     private int p1WhiteScore = 0;
@@ -65,33 +69,33 @@ public class DuoGameManager : MonoBehaviour
     {
         rule = new GomokuRule(BoardData.Size);
         UpdateScoreUI();
-        RestartGame();
+        
+        isGameOver = true;
+
+        if (startButtonText != null)
+        {
+            startButtonText.text = "게임 시작";
+        }
+
+        SetStatus("[게임 시작] 버튼을 눌러주세요.");
     }
 
     private void Update()
     {
-        if (isGameOver || !isTimerRunning || isCountingDown)
+        if (isGameOver)
         {
             Cursor.visible = true;
             return;
-        }
-           
-
-        currentTimer -= Time.deltaTime;
-        UpdateTimerUI();
-
-        if (currentTimer <= 0)
-        {
-            currentTimer = 0;
-            UpdateTimerUI();
-            OnTimeOut();
         }
 
         UpdateCursorVisibility();
 
         if (Input.GetMouseButtonDown(0))
         {
-            TryClickBoard();
+            if (!EventSystem.current.IsPointerOverGameObject())
+            {
+                TryClickBoard();
+            }
         }
     }
 
@@ -126,7 +130,9 @@ public class DuoGameManager : MonoBehaviour
         }
 
         boardData.SetCell(x, y, currentTurn);
-        SpawnStoneVisual(x, y, currentTurn);
+
+        GameObject placeStone = SpawnStoneVisual(x, y, currentTurn);
+        moveHistory.Push(new MoveRecord { x = x, y = y, stoneObj = placeStone });
 
         if (rule.CheckWin(boardData.GetArray(), x, y, currentTurn))
         {
@@ -143,11 +149,55 @@ public class DuoGameManager : MonoBehaviour
         SwitchTurn();
     }
 
+    public void UndoMove()
+    {
+        if (isGameOver || moveHistory.Count == 0)
+        {
+            SetStatus("지금은 무를 수 없습니다.", 1.5f);
+            return;
+        }
+
+        MoveRecord lastMove = moveHistory.Pop();
+
+        boardData.SetCell(lastMove.x, lastMove.y, StoneType.Empty);
+
+        if (lastMove.stoneObj != null)
+        {
+            Destroy(lastMove.stoneObj);
+        }
+
+        currentTurn = (currentTurn == StoneType.Black) ? StoneType.White : StoneType.Black;
+
+        if (moveHistory.Count > 0)
+        {
+            MoveRecord prevMove = moveHistory.Peek();
+            Vector2 pos = boardOrigin + new Vector2(prevMove.x * cellSize.x, prevMove.y * cellSize.y);
+            if (currentLastMoveMarker != null)
+            {
+                currentLastMoveMarker.transform.position = pos;
+                currentLastMoveMarker.transform.SetAsLastSibling();
+            }
+        }
+        else
+        {
+            if (currentLastMoveMarker != null)
+            {
+                Destroy(currentLastMoveMarker);
+                currentLastMoveMarker = null;
+            }
+        }
+
+        UpdateUI();
+        UpdateForbiddenMarkers();
+        UpdateHandCursor();
+
+        SetStatus("무르기를 사용했습니다.", 1.5f);
+    }
+
     private void SwitchTurn()
     {
         currentTurn = (currentTurn == StoneType.Black) ? StoneType.White : StoneType.Black;
         UpdateUI();
-        ResetTimer();
         UpdateForbiddenMarkers();
         UpdateHandCursor();
     }
@@ -226,11 +276,11 @@ public class DuoGameManager : MonoBehaviour
         }
     }
 
-    private void SpawnStoneVisual(int x, int y, StoneType color)
+    private GameObject SpawnStoneVisual(int x, int y, StoneType color)
     {
         GameObject prefab = (color == StoneType.Black) ? blackStonePrefab : whiteStonePrefab;
         Vector2 pos = boardOrigin + new Vector2(x * cellSize.x, y * cellSize.y);
-        Instantiate(prefab, pos, Quaternion.identity, boardRoot);
+        GameObject newStone = Instantiate(prefab, pos, Quaternion.identity, boardRoot);
 
         if (lastMoveMarkerPrefab != null)
         {
@@ -245,12 +295,13 @@ public class DuoGameManager : MonoBehaviour
                 currentLastMoveMarker.transform.SetAsLastSibling();
             }
         }
+
+        return newStone;
     }
 
     private void EndGame(string message, StoneType winner)
     {
         isGameOver = true;
-        isTimerRunning = false;
         winColor = winner;
 
         UpdateForbiddenMarkers();
@@ -281,9 +332,9 @@ public class DuoGameManager : MonoBehaviour
         }
 
         currentLastMoveMarker = null;
+        moveHistory.Clear();
 
         UpdateUI();
-        ResetTimer();
         UpdateForbiddenMarkers();
         UpdateHandCursor();
 
@@ -292,32 +343,12 @@ public class DuoGameManager : MonoBehaviour
             gameOverPanel.SetActive(false);
         }
 
-        StartCoroutine(StartCountDownRoutine());
-    }
-
-    private IEnumerator StartCountDownRoutine()
-    {
-        isCountingDown = true;
-
-        UpdateUI();
-        if (timerText != null)
-            timerText.text = "준비...";
-
-        SetStatus("3");
-        yield return new WaitForSeconds(1f);
-
-        SetStatus("2");
-        yield return new WaitForSeconds(1f);
-
-        SetStatus("1");
-        yield return new WaitForSeconds(1f);
+        if (startButtonText != null)
+        {
+            startButtonText.text = "다시 시작";
+        }
 
         SetStatus("게임 시작!", 1.5f);
-
-        isCountingDown = false;
-        ResetTimer();
-
-        UpdateForbiddenMarkers();
     }
 
     private IEnumerator HandClickAnimationRoutine()
@@ -389,28 +420,6 @@ public class DuoGameManager : MonoBehaviour
         if (statusText != null)
         {
             statusText.text = "";
-        }
-    }
-
-    private void OnTimeOut()
-    {
-        Debug.Log("시간초과");
-        SetStatus($"{(currentTurn == StoneType.Black ? "흑" : "백")}! 초읽기 시간 초과! 턴 변경", 1.5f);
-        SwitchTurn();
-    }
-
-    private void ResetTimer()
-    {
-        currentTimer = timeLimit;
-        isTimerRunning = true;
-        UpdateTimerUI();
-    }
-
-    private void UpdateTimerUI()
-    {
-        if (timerText != null && !isCountingDown)
-        {
-            timerText.text = $"{Mathf.CeilToInt(currentTimer)}초";
         }
     }
 

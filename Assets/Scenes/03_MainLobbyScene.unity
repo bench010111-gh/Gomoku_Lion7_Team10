@@ -495,7 +495,7 @@ MonoBehaviour:
   nicknameText: {fileID: 1246400928}
   singleLobbyScene: 04_SingleLobbyScene
   multiLobbyScene: 05_MultiLobbyScene
-  duoLobbyScene: 06_DuoLobbyScene
+  duoLobbyScene: 06_DuoGameScene
   loginScene: 02_LoginScene
   logoutPopupPanel: {fileID: 546079656}
 --- !u!4 &190789342
