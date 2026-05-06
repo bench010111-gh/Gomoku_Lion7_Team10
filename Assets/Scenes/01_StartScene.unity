@@ -686,10 +686,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 774359344}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a74d7bc9e586f745b2173f072a6afbc, type: 3}
+  m_Script: {fileID: 11500000, guid: a4e9ed441b1b0514f96984c194d0bf82, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TitleImpact
+  m_EditorClassIdentifier: Assembly-CSharp::TitleImpactBIG
   uiShake: {fileID: 52246099}
+  boomSFX: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
+  mainBGM: {fileID: 8300000, guid: d9dbdbf27d38ed04e9c2047cc579b54d, type: 3}
 --- !u!1 &837679084
 GameObject:
   m_ObjectHideFlags: 0
@@ -870,6 +872,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleImpact
   uiShake: {fileID: 52246099}
+  boomSFX: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
 --- !u!1 &905713402
 GameObject:
   m_ObjectHideFlags: 0
@@ -916,6 +919,7 @@ GameObject:
   - component: {fileID: 922438012}
   - component: {fileID: 922438011}
   - component: {fileID: 922438010}
+  - component: {fileID: 922438013}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -1033,7 +1037,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   mixer: {fileID: 24100000, guid: 93a5e1db05303d243830e1f61eb01b63, type: 2}
-  bgmSource: {fileID: 922438010}
+  bgmSourceA: {fileID: 922438010}
+  bgmSourceB: {fileID: 922438013}
   sfxPrefab: {fileID: 1433567862353564699, guid: 0e3c75c227f90c84abedbcebd0934b0d, type: 3}
   poolSize: 10
 --- !u!4 &922438012
@@ -1051,6 +1056,103 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &922438013
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922438009}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &995238212
 GameObject:
   m_ObjectHideFlags: 0
@@ -1503,6 +1605,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleImpact
   uiShake: {fileID: 52246099}
+  boomSFX: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
 --- !u!1 &1851906594
 GameObject:
   m_ObjectHideFlags: 0
