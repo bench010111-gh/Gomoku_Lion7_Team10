@@ -540,7 +540,7 @@ Canvas:
   m_GameObject: {fileID: 54809545}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
+  m_RenderMode: 1
   m_Camera: {fileID: 519420031}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -553,7 +553,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!224 &54809549
 RectTransform:
@@ -1230,14 +1230,14 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 10
+  m_SortingOrder: 100
   m_MaskInteraction: 0
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 2.7131784, y: 2.4806201}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 0
@@ -3704,7 +3704,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -10
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1481361546272026671, guid: 7f274467bbf965e43ac02e7c0c60e09a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -3726,7 +3726,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 1.2, y: 1, z: 1}
+  m_LocalScale: {x: 1.32, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -3860,6 +3860,8 @@ MonoBehaviour:
   blackHandSprite: {fileID: 2594348590020794623, guid: 1cfbaf699da6c714aae2ee7693f323ab, type: 3}
   whiteHandSprite: {fileID: -637055807977145609, guid: 5e2bd71b1b848484b99b63e07b1f64a0, type: 3}
   handOffset: {x: 2.25, y: -1.65, z: 0}
+  defaultPointerSprite: {fileID: 6554736390298987251, guid: 52c8229de6f52664db7dd682046ea0e3, type: 3}
+  clickPointerSprite: {fileID: 4112739436333097279, guid: 003379e5848478c41af82be4201bd255, type: 3}
 --- !u!4 &1914343780
 Transform:
   m_ObjectHideFlags: 0
