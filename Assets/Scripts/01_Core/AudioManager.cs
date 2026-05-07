@@ -150,7 +150,7 @@ public class AudioManager : MonoBehaviour
             float t = time / duration;
 
             currentBGM.volume = Mathf.Lerp(startVolume, 0f, t);
-            nextBGM.volume = Mathf.Lerp(0f, 1f, t);
+            nextBGM.volume = Mathf.Lerp(0f, 0.3f, t);
 
             yield return null;
         }

@@ -1,13 +1,13 @@
 fileFormatVersion: 2
-guid: e8861a745984f804da671e9a80036c49
+guid: 6304bc2d7aae7b74895dc2f681932f8e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3931525808382836099
-    second: subway_2pm02_0
+      213: 634574539146599550
+    second: DSystem_PressButton_0
   - first:
-      213: 5924655582452974578
-    second: subway_2pm02_1
+      213: 4159515022060049362
+    second: DSystem_PressButton_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -116,13 +116,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: subway_2pm02_0
+      name: DSystem_PressButton_0
       rect:
         serializedVersion: 2
-        x: 520
-        y: 115
-        width: 630
-        height: 800
+        x: 0
+        y: 0
+        width: 50
+        height: 38
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,8 +131,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 38d70f184e59f8630800000000000000
-      internalID: 3931525808382836099
+      spriteID: e7c17556e267ec800800000000000000
+      internalID: 634574539146599550
       vertices: []
       indices: 
       edges: []
@@ -141,7 +141,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 6e18597225d45c54ab2af267689e3eb0
+    spriteID: 0f25adcfd90a3e549a04643cd3b96d58
     internalID: 0
     vertices: []
     indices: 
@@ -151,8 +151,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      subway_2pm02_0: 3931525808382836099
-      subway_2pm02_1: 5924655582452974578
+      DSystem_PressButton_0: 634574539146599550
+      DSystem_PressButton_1: 4159515022060049362
+      DSystem_PressButton_2: -2034622113
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

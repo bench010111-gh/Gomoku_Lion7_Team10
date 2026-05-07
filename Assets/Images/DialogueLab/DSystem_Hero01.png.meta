@@ -1,13 +1,22 @@
 fileFormatVersion: 2
-guid: e8861a745984f804da671e9a80036c49
+guid: d8a40fddb0b00904a819274b415cdd28
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3931525808382836099
-    second: subway_2pm02_0
+      213: -4459922058007524132
+    second: DSystem_Hero01_0
   - first:
-      213: 5924655582452974578
-    second: subway_2pm02_1
+      213: -7598340222473975792
+    second: DSystem_Hero01_1
+  - first:
+      213: -6684482675775609308
+    second: DSystem_Hero01_2
+  - first:
+      213: -6308284229701927580
+    second: DSystem_Hero01_3
+  - first:
+      213: -1082479800720848112
+    second: DSystem_Hero01_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -116,13 +125,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: subway_2pm02_0
+      name: DSystem_Hero01_2
       rect:
         serializedVersion: 2
-        x: 520
-        y: 115
-        width: 630
-        height: 800
+        x: 207
+        y: 0
+        width: 642
+        height: 1024
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,8 +140,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 38d70f184e59f8630800000000000000
-      internalID: 3931525808382836099
+      spriteID: 426642b1c62fb33a0800000000000000
+      internalID: -6684482675775609308
       vertices: []
       indices: 
       edges: []
@@ -141,7 +150,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 6e18597225d45c54ab2af267689e3eb0
+    spriteID: b1664576d01f9b94f9c6d3983034ed50
     internalID: 0
     vertices: []
     indices: 
@@ -151,8 +160,11 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      subway_2pm02_0: 3931525808382836099
-      subway_2pm02_1: 5924655582452974578
+      DSystem_Hero01_0: -4459922058007524132
+      DSystem_Hero01_1: -7598340222473975792
+      DSystem_Hero01_2: -6684482675775609308
+      DSystem_Hero01_3: -6308284229701927580
+      DSystem_Hero01_4: -1082479800720848112
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
