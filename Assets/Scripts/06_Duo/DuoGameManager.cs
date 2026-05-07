@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class DuoGameManager : MonoBehaviour
 {
@@ -53,6 +54,9 @@ public class DuoGameManager : MonoBehaviour
     [Header("System Cursor (UI Mode)")]
     public Sprite defaultPointerSprite;             //평소 손 이미지 스프라이트
     public Sprite clickPointerSprite;               //클릭 시 손 이미지 스프라이트
+
+    [Header("LoadScene")]
+    public string SceneName = "";
 
     private BoardData boardData = new BoardData();      //바둑판 배열 데이터 관리
     private GomokuRule rule;                            //오목 룰(금수, 승패 판별) 관리자
@@ -145,6 +149,11 @@ public class DuoGameManager : MonoBehaviour
 
         //무르기를 위해 장부에 기록 추가
         moveHistory.Push(new MoveRecord { x = x, y = y, stoneObj = placeStone });
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayStoneSound();
+        }
 
         //승리 조건 검사
         if (rule.CheckWin(boardData.GetArray(), x, y, currentTurn))
@@ -349,7 +358,10 @@ public class DuoGameManager : MonoBehaviour
     }
     
     public void RestartGame()
-    { 
+    {
+        if (AudioManager.Instance != null) 
+            AudioManager.Instance.PlayClickSound();
+
         boardData.ClearBoard();             //보드 데이터, 씬의 돌 오브젝트, 무르기 기록 싹 초기화
         isGameOver = false;
         currentTurn = StoneType.Black;
@@ -458,6 +470,9 @@ public class DuoGameManager : MonoBehaviour
     //게임 종료 팝업에서 승리자를 골랐을 때 점수를 올리고 팝업을 닫는 함수
     public void SelectWinner(int playerNum)
     {
+        if (AudioManager.Instance != null) 
+            AudioManager.Instance.PlayClickSound();
+
         if (winColor != StoneType.Empty)
         {
             if (winColor == StoneType.Black)
@@ -494,6 +509,15 @@ public class DuoGameManager : MonoBehaviour
         if (p2WhiteScoreText != null) p2WhiteScoreText.text = $"백 : {p2WhiteScore}";
     }
 
+
+    public void GoToLobby()
+    {
+        if (AudioManager.Instance != null) 
+            AudioManager.Instance.PlayClickSound();
+
+        Cursor.visible = true;
+        SceneManager.LoadScene(SceneName);
+    }
     private void OnDestroy()
     {
         Cursor.visible = true; // 마우스 무조건 켜기

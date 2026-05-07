@@ -1582,6 +1582,14 @@ PrefabInstance:
       propertyPath: OutputAudioMixerGroup
       value: 
       objectReference: {fileID: 111892296046230424, guid: 93a5e1db05303d243830e1f61eb01b63, type: 2}
+    - target: {fileID: 6176161313710826165, guid: 53a1422ad3742dc4b92ffac1ed900499, type: 3}
+      propertyPath: stonePlaceClip
+      value: 
+      objectReference: {fileID: 8300000, guid: c0b0d0b5d4d8c0d42b5f70a9786d3e0e, type: 3}
+    - target: {fileID: 6176161313710826165, guid: 53a1422ad3742dc4b92ffac1ed900499, type: 3}
+      propertyPath: buttonClickClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 1d313deb1a832804284460a8220070a6, type: 3}
     - target: {fileID: 6918843700373142479, guid: 53a1422ad3742dc4b92ffac1ed900499, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
