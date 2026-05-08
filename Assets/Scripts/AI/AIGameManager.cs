@@ -407,6 +407,7 @@ public class AIGameManager : MonoBehaviour
         currentTimer = timeLimit;
         isTimerRunning = true;
         timerText.color = Color.black; 
+
         UpdateTimerUI();
     }
     private void SpawnStoneVisual(int x, int y, StoneType color)
