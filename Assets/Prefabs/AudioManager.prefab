@@ -53,6 +53,10 @@ MonoBehaviour:
   poolSize: 10
   stonePlaceClip: {fileID: 8300000, guid: c0b0d0b5d4d8c0d42b5f70a9786d3e0e, type: 3}
   buttonClickClip: {fileID: 8300000, guid: 1d313deb1a832804284460a8220070a6, type: 3}
+  shutterCrashClip: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
+  popupClip: {fileID: 8300000, guid: 88f8ed2fd25a89f4ea92e0d2aa599125, type: 3}
+  winClip: {fileID: 8300000, guid: a88b520ea76096f40952d972e0b23913, type: 3}
+  lossClip: {fileID: 8300000, guid: cff333f59667a9343ae98b98ab89c25b, type: 3}
 --- !u!82 &4477157786342405505
 AudioSource:
   m_ObjectHideFlags: 0

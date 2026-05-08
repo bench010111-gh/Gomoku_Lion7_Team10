@@ -44,6 +44,12 @@ public class DuoGameManager : MonoBehaviour
     public TMP_Text p2BlackScoreText;               //p2의 흑돌승리 점수
     public TMP_Text p2WhiteScoreText;               //p2의 백돌승리 점수
 
+    [Header("Player Name UI")]
+    public TMP_Text p1NameText;                     //p1 이름 텍스트
+    public TMP_Text p2NameText;                     //p2 이름 텍스트
+    public GameObject nameEditPopup;                //이름 변경 팝업창 패널 
+    public TMP_InputField nameInputField;           //이름 입력창
+
     [Header("Hand Cursor")]
     public Transform handCursorTransform;           //마우스를 따라다닐 손 오브젝트
     public SpriteRenderer handSpriteRenderer;       //손 이미지 렌더러
@@ -56,12 +62,28 @@ public class DuoGameManager : MonoBehaviour
     public Sprite clickPointerSprite;               //클릭 시 손 이미지 스프라이트
 
     [Header("LoadScene")]
-    public string SceneName = "";
+    public string SceneName = "";                   //씬 이동을 위한 문자열변수
+
+    [Header("Transition Animation")]
+    public RectTransform doorPanel;                 //셔터 이미지
+    public float doorAnimSpeed = 0.5f;              //문이 닫히는 데 걸리는 시간
+
+    [Header("Bounce Effect")]
+    public float bounceDuration = 0.2f;             // 흔들리는 시간 (초)
+    public float bounceHeight = 30f;                // 튕겨 오르는 높이 (픽셀)
+    public float bounceSpeed = 40f;                 // 진동 속도 (숫자가 클수록 다라락 떨림)
 
     private BoardData boardData = new BoardData();      //바둑판 배열 데이터 관리
     private GomokuRule rule;                            //오목 룰(금수, 승패 판별) 관리자
     private StoneType currentTurn = StoneType.Black;    //현재 턴 저장
     private bool isGameOver = false;                    //게임 종료 상태 여부
+
+    private int editingPlayerNum = 1;               //이름을 바꿀 플레이어 번호
+    private string p1Name = "Player 1";
+    private string p2Name = "Player 2";
+
+    public TMP_Text p1WinButtonText;                // 1P 승리 버튼 안의 텍스트
+    public TMP_Text p2WinButtonText;                // 2P 승리 버튼 안의 텍스트
 
     private Coroutine statusCoroutine;                                      //상태 메세지 타이머 코루틴
     private List<GameObject> forbiddenMarkers = new List<GameObject>();     //금수 마커들
@@ -85,6 +107,9 @@ public class DuoGameManager : MonoBehaviour
         {
             startButtonText.text = "게임 시작";
         }
+
+        if (p1NameText != null) p1NameText.text = p1Name;
+        if (p2NameText != null) p2NameText.text = p2Name;
 
         SetStatus("[게임 시작] 버튼을 눌러주세요.");
     }
@@ -344,12 +369,23 @@ public class DuoGameManager : MonoBehaviour
         isGameOver = true;
         winColor = winner;
 
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayWinSound();
+        }
+
         UpdateForbiddenMarkers();           //게임 끝나면 금수 마커 숨김
 
         if (gameOverText != null)
         {
             gameOverText.text = message;
         }
+
+        if (p1WinButtonText != null)
+            p1WinButtonText.text = $"{p1Name} 승리";
+
+        if (p2WinButtonText != null)
+            p2WinButtonText.text = $"{p2Name} 승리";
 
         if (gameOverPanel != null)
         {
@@ -509,15 +545,143 @@ public class DuoGameManager : MonoBehaviour
         if (p2WhiteScoreText != null) p2WhiteScoreText.text = $"백 : {p2WhiteScore}";
     }
 
+    public void OpenNameEditPopup(int playerNum)
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayPopupSound();
+
+        editingPlayerNum = playerNum;
+
+        if (nameInputField != null)
+        {
+            nameInputField.text = (playerNum == 1) ? p1Name : p2Name;
+        }
+
+        if (nameEditPopup != null)
+        {
+            nameEditPopup.SetActive(true);
+        }
+    }
+
+    public void ConfirmNameEdit()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (nameInputField != null)
+        {
+            string newName = nameInputField.text.Trim();
+
+            if (string.IsNullOrEmpty(newName))
+            {
+                newName = (editingPlayerNum == 1) ? "Player 1" : "Player 2";
+            }
+
+            if (editingPlayerNum == 1)
+            {
+                p1Name = newName;
+                if (p1NameText != null)
+                    p1NameText.text = p1Name;
+            }
+            else if (editingPlayerNum == 2)
+            {
+                p2Name = newName;
+                if (p2NameText != null) p2NameText.text = p2Name;
+            }
+        }
+
+        if (nameEditPopup != null)
+        {
+            nameEditPopup.SetActive(false);
+        }
+    }
+
+    public void CancelNameEdit()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (nameEditPopup != null)
+        {
+            nameEditPopup.SetActive(false);
+        }
+    }
 
     public void GoToLobby()
     {
         if (AudioManager.Instance != null) 
             AudioManager.Instance.PlayClickSound();
 
+        if (doorPanel != null)
+        {
+            isGameOver = true;
+            StartCoroutine(CloseDoorAndGoToLobbyRoutine());
+        }
+        else
+        {
+            Cursor.visible = true;
+            SceneManager.LoadScene(SceneName);
+        }
+    }
+
+    private IEnumerator CloseDoorAndGoToLobbyRoutine()
+    {
+        doorPanel.gameObject.SetActive(true);
+        Vector2 startPos = doorPanel.anchoredPosition;
+        Vector2 endPos = Vector2.zero;
+
+        bool hasPlayedSound = false;
+
+        float soundOffset = 0.08f;
+
+        float timer = 0f;
+        while (timer < doorAnimSpeed)
+        {
+            timer += Time.deltaTime;
+            float t = timer / doorAnimSpeed;
+            //t = Mathf.Sin(t * Mathf.PI * 0.5f);
+            t = t * t;
+            doorPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
+
+            if (!hasPlayedSound && timer >= (doorAnimSpeed - soundOffset))
+            {
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayShutterSound();
+                }
+                hasPlayedSound = true; // 스위치를 꺼서 중복 재생 방지
+            }
+
+            yield return null;
+        }
+
+        if (!hasPlayedSound && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayShutterSound();
+        }
+
+        float shakeTimer = 0f;
+
+        while (shakeTimer < bounceDuration)
+        {
+            shakeTimer += Time.deltaTime;
+
+            float damping = 1.0f - (shakeTimer / bounceDuration);
+
+            float bounceY = Mathf.Sin(shakeTimer * bounceSpeed) * bounceHeight * damping;
+
+            doorPanel.anchoredPosition = endPos + new Vector2(0, bounceY);
+            yield return null;
+        }
+
+        doorPanel.anchoredPosition = endPos;
+        yield return new WaitForSeconds(0.75f);
+
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
         SceneManager.LoadScene(SceneName);
     }
+
     private void OnDestroy()
     {
         Cursor.visible = true; // 마우스 무조건 켜기

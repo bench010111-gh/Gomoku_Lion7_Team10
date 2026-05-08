@@ -142,10 +142,10 @@ TextureImporter:
       name: cursor-click_0
       rect:
         serializedVersion: 2
-        x: 480
-        y: 154
-        width: 720
-        height: 640
+        x: 422
+        y: 120
+        width: 870
+        height: 740
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
