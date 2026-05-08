@@ -19,6 +19,9 @@ public class MainLobbyManager : MonoBehaviour
     [Header("Logout Popup")]
     public GameObject logoutPopupPanel;
 
+    [Header("Setting Popup")]
+    public GameObject settingPopupPanel;
+
     void Start()
     {
         if (nicknameText != null && UserSession.Instance != null)
@@ -29,6 +32,11 @@ public class MainLobbyManager : MonoBehaviour
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(false);
+        }
+
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(false);
         }
     }
 
@@ -82,6 +90,22 @@ public class MainLobbyManager : MonoBehaviour
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(false);
+        }
+    }
+
+    public void OnClickSetting()
+    {
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(true);
+        }
+    }
+
+    public void OnClickCloseSetting()
+    {
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(false);
         }
     }
 }
