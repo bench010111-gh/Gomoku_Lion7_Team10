@@ -50,6 +50,9 @@ public class DuoGameManager : MonoBehaviour
     public GameObject nameEditPopup;                //이름 변경 팝업창 패널 
     public TMP_InputField nameInputField;           //이름 입력창
 
+    [Header("Exit UI")]
+    public GameObject exitConfirmPopup;     // 나가기 재차 확인 팝업창 패널
+
     [Header("Hand Cursor")]
     public Transform handCursorTransform;           //마우스를 따라다닐 손 오브젝트
     public SpriteRenderer handSpriteRenderer;       //손 이미지 렌더러
@@ -552,14 +555,16 @@ public class DuoGameManager : MonoBehaviour
 
         editingPlayerNum = playerNum;
 
-        if (nameInputField != null)
-        {
-            nameInputField.text = (playerNum == 1) ? p1Name : p2Name;
-        }
-
         if (nameEditPopup != null)
         {
             nameEditPopup.SetActive(true);
+        }
+
+        if (nameInputField != null)
+        {
+            nameInputField.text = (playerNum == 1) ? p1Name : p2Name;
+
+            nameInputField.caretPosition = nameInputField.text.Length;
         }
     }
 
@@ -607,11 +612,39 @@ public class DuoGameManager : MonoBehaviour
         }
     }
 
-    public void GoToLobby()
+    public void OpenExitConfirmPopup()
     {
-        if (AudioManager.Instance != null) 
+        if (AudioManager.Instance != null)
             AudioManager.Instance.PlayClickSound();
 
+        if (exitConfirmPopup != null)
+        {
+            exitConfirmPopup.SetActive(true); // 확인 팝업창 켜기
+        }
+    }
+
+    public void CancelExit()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (exitConfirmPopup != null)
+        {
+            exitConfirmPopup.SetActive(false); // 팝업창만 다시 끄기
+        }
+    }
+
+    public void ConfirmExit()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (exitConfirmPopup != null)
+        {
+            exitConfirmPopup.SetActive(false); // 팝업창 끄기
+        }
+
+        // 기존 GoToLobby()에 있던 셔터 애니메이션 및 씬 이동 로직 실행
         if (doorPanel != null)
         {
             isGameOver = true;
