@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -11,11 +12,11 @@ public class AIGameManager : MonoBehaviour
     [Header("Game Settings")]
     public AIGameSettingSO settingSO;
     private int depth;
-    private int timeLimitMs; 
+    private int timeLimitMs;
 
     [Header("Player")]
     public StoneType playerStone;
-    public StoneType aiStone; 
+    public StoneType aiStone;
 
     [Header("AI")]
     public AI ai;
@@ -24,8 +25,13 @@ public class AIGameManager : MonoBehaviour
     public float delay = 0.5f;
 
     [Header("Board Settings")]
-    public Vector2 boardOrigin = new Vector2(-4, -3.227f); 
-    public Vector2 cellSize = new Vector2(0.57f, 0.5f);
+    //public Vector2 boardOrigin = new Vector2(-4, -3.227f);
+    //public Vector2 boardOrigin = new Vector2(-3.9831f, -3.2897f);
+    public Vector2 boardOrigin;
+
+    // public Vector2 cellSize = new Vector2(0.57f, 0.5f);
+    //public Vector2 cellSize = new Vector2(0.5698f, 0.5011f);
+    public Vector2 cellSize; 
     public Transform boardRoot;
 
     [Header("Board Prefabs")]
@@ -37,8 +43,6 @@ public class AIGameManager : MonoBehaviour
     public TMP_Text turnText;
     public TMP_Text statusText;
     public TMP_Text timerText;
-    public TMP_Text playerText;
-    public TMP_Text aiText; 
 
     [Header("Timer Settings")]
     public float timeLimit = 30f;
@@ -49,7 +53,7 @@ public class AIGameManager : MonoBehaviour
     [Header("GameOver UI")]
     public GameObject gameOverPanel;
     public TMP_Text gameOverText;
-    public TMP_Text resultText; 
+    public TMP_Text resultText;
 
     private BoardData boardData;
     private GomokuRule rule;
@@ -61,28 +65,32 @@ public class AIGameManager : MonoBehaviour
 
     private WaitForSeconds wait;
 
-    [SerializeField] Image playerHandImage;
-
     [SerializeField] Transform aiHand;
     [SerializeField] SpriteRenderer aiHandSr;
 
+    [Header("Sprites")]
     [SerializeField] Sprite blackStoneHand;
     [SerializeField] Sprite whiteStoneHand;
+    [SerializeField] Sprite blackStoneBowl;
+    [SerializeField] Sprite whiteStoneBowl; 
+
 
     [SerializeField] GameObject lastPlacedStoneMarkerPrefab;
-    private GameObject lastPlacedStoneMarkerObject; 
+    private GameObject lastPlacedStoneMarkerObject;
 
+    [SerializeField] PlayerMouse playerMouse;
+    [SerializeField] Image aiBowlImg; 
+    [SerializeField] Image playerBowlImg; 
     void Start()
     {
         Init();
-        RestartGame(); 
+        RestartGame();
     }
 
     void Update()
     {
         if (isGameOver || isCountingDown) return;
 
-        // 타이머
         if (isTimerRunning)
         {
             currentTimer -= Time.deltaTime;
@@ -93,12 +101,22 @@ public class AIGameManager : MonoBehaviour
         if (currentTurn == playerStone)
         {
             if (Input.GetMouseButtonDown(0))
-                TryClickBoard();
+            {
+                // UI 위에서 클릭했을 때에는 Click이 되지 않도록. 
+                if (EventSystem.current.IsPointerOverGameObject())
+                    return;
+
+                if (playerMouse.IsHoldingStone)
+                {
+                    bool success = TryClickBoard();
+                    playerMouse.DropStone(); 
+                }
+            }
         }
         else
         {
             if (!isThinking)
-                RunAI(); 
+                RunAI();
         }
     }
 
@@ -112,12 +130,13 @@ public class AIGameManager : MonoBehaviour
         wait = new WaitForSeconds(delay);
 
         SetOrder();
-        SetPlayerInfoUI();
         SetAIParams(settingSO.GetDifficulty());
         SetHandSprite();
-
-        SpawnLastPlacedStoneMarker(); 
+        SetBowlImage(); 
+        SpawnLastPlacedStoneMarker();
+        playerMouse.SetStoneType(playerStone);
     }
+
     private void SetAIParams(Difficulty difficulty)
     {
         switch (difficulty)
@@ -139,17 +158,21 @@ public class AIGameManager : MonoBehaviour
     private void SetOrder()
     {
         aiStone = settingSO.IsFirstMove() ? StoneType.Black : StoneType.White;
-        playerStone = aiStone == StoneType.Black ? StoneType.White : StoneType.Black; 
+        playerStone = aiStone == StoneType.Black ? StoneType.White : StoneType.Black;
     }
     private void SetHandSprite()
     {
-        playerHandImage.sprite = playerStone == StoneType.Black ? blackStoneHand : whiteStoneHand;
         aiHandSr.sprite = aiStone == StoneType.Black ? blackStoneHand : whiteStoneHand;
+    }
+    private void SetBowlImage()
+    {
+        aiBowlImg.sprite = aiStone == StoneType.Black ? blackStoneBowl : whiteStoneBowl; 
+        playerBowlImg.sprite = playerStone == StoneType.Black ? blackStoneBowl : whiteStoneBowl;
     }
     #endregion 
 
     #region Input
-    private void TryClickBoard()
+    private bool TryClickBoard()
     {
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 localPos = (Vector2)mousePos - boardOrigin;
@@ -158,19 +181,30 @@ public class AIGameManager : MonoBehaviour
         int y = Mathf.RoundToInt(localPos.y / cellSize.y);
 
         if (boardData.IsInside(x, y) && boardData.GetCell(x, y) == StoneType.Empty)
-            PlaceStone(x, y, playerStone);
+            return PlaceStone(x, y, playerStone);
+        
         else
-            Debug.Log("Not empty!"); 
+        {
+            Debug.Log("이미 돌이 있는 자리입니다.");
+            return false; 
+        }
+    }
+    public void OnClickStoneBowl()
+    {
+        if (isGameOver) return;
+
+        if (!playerMouse.IsHoldingStone)
+            playerMouse.PickupStone();
     }
     #endregion
 
     #region Logic 
-    private void PlaceStone(int x, int y, StoneType stone)
+    private bool PlaceStone(int x, int y, StoneType stone)
     {
-        if(currentTurn != stone)
+        if (currentTurn != stone)
         {
             Debug.Log("현재 차례에 둘 수 없습니다.");
-            return; 
+            return false;
         }
 
         if (currentTurn == StoneType.Black)
@@ -178,28 +212,29 @@ public class AIGameManager : MonoBehaviour
             if (rule.IsForbidden(boardData.GetArray(), x, y, currentTurn, out string reason))
             {
                 SetStatus($"금수 자리입니다! ({reason})", 1.5f);
-                return;
+                return false;
             }
         }
 
         boardData.SetCell(x, y, currentTurn);
         SpawnStoneVisual(x, y, currentTurn);
-        UpdateLastPlacedStoneMarker(x, y); 
+        UpdateLastPlacedStoneMarker(x, y);
 
         if (rule.CheckWin(boardData.GetArray(), x, y, currentTurn))
         {
             // 이펙트 추가 
             EndGame($"{(currentTurn == StoneType.Black ? "흑돌" : "백돌")} 승리!");
-            return;
+            return true;
         }
 
         if (rule.IsDraw(boardData.GetPlacedStoneCount()))
         {
             EndGame("무승부!");
-            return;
+            return true;
         }
 
         SwitchTurn();
+        return true; 
     }
     private void SwitchTurn()
     {
@@ -216,6 +251,7 @@ public class AIGameManager : MonoBehaviour
     public void RestartGame()
     {
         boardData.ClearBoard();
+
         isGameOver = false;
         currentTurn = StoneType.Black;
 
@@ -233,9 +269,10 @@ public class AIGameManager : MonoBehaviour
         UpdateForbiddenMarkers();
 
         if (gameOverPanel != null)
-        {
             gameOverPanel.SetActive(false);
-        }
+
+        statusText.gameObject.SetActive(true);
+        turnText.gameObject.SetActive(false);
 
         StartCoroutine(StartCountDownRoutine());
     }
@@ -250,7 +287,7 @@ public class AIGameManager : MonoBehaviour
             gameOverText.text = message;
 
         if (resultText != null)
-            resultText.text = currentTurn == aiStone ? "패배" : "승리"; 
+            resultText.text = currentTurn == aiStone ? "패배" : "승리";
 
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
@@ -264,7 +301,7 @@ public class AIGameManager : MonoBehaviour
 
         UpdateTurnTextUI();
         if (timerText != null)
-            timerText.text = "준비...";
+            timerText.text = "준비";
 
         SetStatus("3");
         yield return new WaitForSeconds(1f);
@@ -275,7 +312,11 @@ public class AIGameManager : MonoBehaviour
         SetStatus("1");
         yield return new WaitForSeconds(1f);
 
-        SetStatus("게임 시작!", 1.5f);
+        SetStatus("게임 시작!");
+        yield return new WaitForSeconds(1.5f);
+
+        statusText.gameObject.SetActive(false); 
+        turnText.gameObject.SetActive(true);
 
         isCountingDown = false;
         ResetTimer();
@@ -299,29 +340,13 @@ public class AIGameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         if (statusText != null)
-        {
             statusText.text = "";
-        }
-    }
-    private void SetPlayerInfoUI()
-    {
-        if (aiText != null)
-        {
-            aiText.text = aiStone == StoneType.Black ? "AI\n[흑]" : "AI\n[백]";
-            aiText.color = aiStone == StoneType.Black ? Color.black : Color.white;
-        }
-
-        if (playerText != null)
-        {
-            playerText.text = playerStone == StoneType.Black ? "플레이어\n[흑]" : "플레이어\n[백]";
-            playerText.color = playerStone == StoneType.Black ? Color.black : Color.white;
-        }
     }
     private void UpdateTurnTextUI()
     {
         if (turnText != null)
         {
-            turnText.text = $"{(currentTurn == StoneType.Black ? "흑돌 차례" : "백돌 차례")}";
+            turnText.text = $"{(currentTurn == StoneType.Black ? "흑" : "백")}";
             turnText.color = (currentTurn == StoneType.Black) ? Color.black : Color.white;
         }
 
@@ -330,7 +355,11 @@ public class AIGameManager : MonoBehaviour
     {
         if (timerText != null && !isCountingDown)
         {
-            timerText.text = $"{Mathf.CeilToInt(currentTimer)}초";
+            timerText.text = $"00:{Mathf.CeilToInt(currentTimer)}";
+
+            if (currentTimer <= 10)
+                timerText.color = Color.red; 
+
         }
     }
     private void UpdateForbiddenMarkers()
@@ -377,6 +406,7 @@ public class AIGameManager : MonoBehaviour
     {
         currentTimer = timeLimit;
         isTimerRunning = true;
+        timerText.color = Color.black; 
         UpdateTimerUI();
     }
     private void SpawnStoneVisual(int x, int y, StoneType color)
@@ -388,25 +418,25 @@ public class AIGameManager : MonoBehaviour
     private void SpawnLastPlacedStoneMarker()
     {
         lastPlacedStoneMarkerObject = Instantiate(lastPlacedStoneMarkerPrefab, Vector2.zero, Quaternion.identity);
-        lastPlacedStoneMarkerObject.SetActive(false); 
+        lastPlacedStoneMarkerObject.SetActive(false);
     }
     private void UpdateLastPlacedStoneMarker(int x, int y)
     {
         lastPlacedStoneMarkerObject?.SetActive(false);
 
         if (isGameOver)
-            return; 
+            return;
 
         Vector2 pos = boardOrigin + new Vector2(x * cellSize.x, y * cellSize.y);
         lastPlacedStoneMarkerObject.transform.position = pos;
-        lastPlacedStoneMarkerObject.SetActive(true); 
+        lastPlacedStoneMarkerObject.SetActive(true);
     }
     #endregion 
 
     #region AI 
     private void RunAI()
     {
-        isThinking = true; 
+        isThinking = true;
         StartCoroutine(DoAICoroutine());
     }
     private IEnumerator DoAICoroutine()
@@ -416,7 +446,7 @@ public class AIGameManager : MonoBehaviour
         Vector2Int result = new Vector2Int(-1, -1);
         bool done = false;
 
-        System.Threading.ThreadPool.QueueUserWorkItem( _ =>
+        System.Threading.ThreadPool.QueueUserWorkItem(_ =>
         {
             result = ai.GetBestMove(intBoard, (int)aiStone, timeLimitMs, depth);
             done = true;
@@ -424,10 +454,11 @@ public class AIGameManager : MonoBehaviour
 
         yield return new WaitUntil(() => done);
 
+        yield return wait;
+
         yield return StartCoroutine(MoveHand(result.x, result.y));
 
         isThinking = false;
-        yield return wait; 
     }
     private IEnumerator MoveHand(int x, int y)
     {
@@ -470,11 +501,11 @@ public class AIGameManager : MonoBehaviour
             for (int y = 0; y < BoardData.Size; y++)
                 intBoard[x, y] = (int)stoneBoard[x, y];
 
-        return intBoard; 
+        return intBoard;
     }
     public void LoadMainScene()
     {
-        SceneManager.LoadScene("03_MainLobbyScene"); 
+        SceneManager.LoadScene("03_MainLobbyScene");
     }
     #endregion 
 }

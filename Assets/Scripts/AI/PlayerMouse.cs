@@ -1,26 +1,40 @@
 using DG.Tweening;
+using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-// 이 스크립트가 붙은 게임 오브젝트는 반드시 RectTransform을 가지고 있어야 합니다.
 [RequireComponent(typeof(RectTransform))]
 public class PlayerMouse : MonoBehaviour
 {
     private RectTransform rectTransform;
-    private Canvas parentCanvas; // 부모 캔버스 참조
+    private Canvas parentCanvas; 
     private Coroutine punchCoroutine;
 
-    // 인스펙터에서 조절할 수 있도록 변수 노출
+    [Header("PlayerHand")]
+    [SerializeField] private Image handImage; 
+
     [Header("Punch Settings")]
-    [SerializeField] private float punchScaleStrength = 1.2f; // 커질 크기 배율
-    [SerializeField] private float punchDuration = 0.2f;       // 애니메이션 지속 시간
+    [SerializeField] private float punchScaleStrength = 1.2f; 
+    [SerializeField] private float punchDuration = 0.2f;
+
+    [Header("Hand Sprites")]
+    [SerializeField] Sprite baseHand;
+    [SerializeField] Sprite blackStoneHand;
+    [SerializeField] Sprite whiteStoneHand;
+
+    private Sprite storedStoneSprite; 
+    private bool isHoldingStone;
+    public bool IsHoldingStone => isHoldingStone;
+
+    bool isPlayingEffect = false; 
 
     private void Awake()
     {
         Cursor.visible = false;
-        rectTransform = GetComponent<RectTransform>();
 
-        // 이 오브젝트의 부모에서 가장 가까운 캔버스를 찾습니다.
+        rectTransform = GetComponent<RectTransform>();
         parentCanvas = GetComponentInParent<Canvas>();
 
         if (parentCanvas == null)
@@ -30,49 +44,72 @@ public class PlayerMouse : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        handImage.sprite = baseHand;
+        isHoldingStone = false;
+    }
+
     void Update()
     {
-        // 1. 매 프레임 마우스 위치로 UI 오브젝트를 이동시킵니다.
-        // Canvas의 랜더 모드가 Screen Space - Overlay인 경우에 가장 잘 작동하는 방식입니다.
         if (parentCanvas != null)
         {
             Vector2 screenPos = Input.mousePosition;
             Vector2 localPoint;
 
-            // 스크린 좌표를 캔버스 좌표계로 변환하여 anchoredPosition에 할당합니다.
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 parentCanvas.transform as RectTransform,
                 screenPos,
-                parentCanvas.worldCamera, // overlay 모드에서는 보통 null로 들어갑니다.
+                parentCanvas.worldCamera, 
                 out localPoint))
             {
                 rectTransform.anchoredPosition = localPoint;
             }
         }
 
-        // 2. 클릭 입력 처리
         if (Input.GetMouseButtonDown(0))
-        {
-            if (punchCoroutine != null)
-                StopCoroutine(punchCoroutine);
-
-            punchCoroutine = StartCoroutine(PlayStoneClickEffect());
-        }
+            PlayClickEffect(); 
     }
 
+    public void SetStoneType(StoneType stoneType)
+    {
+        storedStoneSprite = stoneType == StoneType.Black ? blackStoneHand : whiteStoneHand; 
+    }
+
+    public void PickupStone()
+    {
+        Debug.Log("Picked up!"); 
+        isHoldingStone = true;
+        handImage.sprite = storedStoneSprite;
+    }
+    public void DropStone()
+    {
+        if (!IsHoldingStone)
+            return;
+
+        Debug.Log("Dropped!");
+
+        isHoldingStone = false;
+        handImage.sprite = baseHand;
+    }
+
+    public void PlayClickEffect()
+    {
+        if (isPlayingEffect)
+            return; 
+
+        if (punchCoroutine != null)
+            StopCoroutine(punchCoroutine);
+
+        isPlayingEffect = true;
+        punchCoroutine = StartCoroutine(PlayStoneClickEffect());
+    }
     public IEnumerator PlayStoneClickEffect()
     {
-        // **수정된 부분:**
-        // 위치를 이동시키는 대신, Scale(크기)를 펀칭하여 
-        // 클릭할 때 살짝 커졌다가 돌아오는 효과를 줍니다. 
-        // 이 방식이 UI 커서 피드백으로 더 명확하고 보기 좋습니다.
-
-        Vector3 strength = Vector3.one * (punchScaleStrength - 1f); // 변화량 계산
-
-        // DOPunchScale은 Vector3로 전달받은 크기만큼 스케일을 변화시킵니다.
-        // 예를 들어 (0.2, 0.2, 0.2)를 주면 원래 크기에서 0.2만큼 더 커졌다가 돌아옵니다.
+        Vector3 strength = Vector3.one * (punchScaleStrength - 1f); 
         yield return this.rectTransform.DOPunchScale(strength, punchDuration, 10, 1f).WaitForCompletion();
 
+        isPlayingEffect = false; 
         punchCoroutine = null;
     }
 }
