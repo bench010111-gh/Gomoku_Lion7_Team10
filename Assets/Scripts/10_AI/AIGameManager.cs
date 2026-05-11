@@ -279,6 +279,8 @@ public class AIGameManager : MonoBehaviour
             }
         }
 
+        ClearLastPlacedStoneMarker();
+
         UpdateTurnTextUI();
         ResetTimer();
 
@@ -452,6 +454,10 @@ public class AIGameManager : MonoBehaviour
         lastPlacedStoneMarkerObject.transform.position = pos;
         lastPlacedStoneMarkerObject.SetActive(true);
     }
+    private void ClearLastPlacedStoneMarker()
+    {
+        lastPlacedStoneMarkerObject.SetActive(false);
+    }
     #endregion 
 
     #region AI 
@@ -526,6 +532,7 @@ public class AIGameManager : MonoBehaviour
     }
     public void LoadMainScene()
     {
+        playerMouse.OnActiveCursor(); 
         SceneManager.LoadScene("03_MainLobbyScene");
     }
     #endregion 

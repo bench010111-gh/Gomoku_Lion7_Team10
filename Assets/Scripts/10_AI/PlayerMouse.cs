@@ -78,7 +78,6 @@ public class PlayerMouse : MonoBehaviour
 
     public void PickupStone()
     {
-        Debug.Log("Picked up!"); 
         isHoldingStone = true;
         handImage.sprite = storedStoneSprite;
     }
@@ -86,8 +85,6 @@ public class PlayerMouse : MonoBehaviour
     {
         if (!IsHoldingStone)
             return;
-
-        Debug.Log("Dropped!");
 
         isHoldingStone = false;
         handImage.sprite = baseHand;
@@ -111,5 +108,10 @@ public class PlayerMouse : MonoBehaviour
 
         isPlayingEffect = false; 
         punchCoroutine = null;
+    }
+    
+    public void OnActiveCursor()
+    {
+        Cursor.visible = true; 
     }
 }
