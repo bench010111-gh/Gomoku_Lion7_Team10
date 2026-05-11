@@ -76,9 +76,6 @@ public class DuoGameManager : MonoBehaviour
     public float bounceHeight = 30f;                // 튕겨 오르는 높이 (픽셀)
     public float bounceSpeed = 40f;                 // 진동 속도 (숫자가 클수록 다라락 떨림)
 
-    [Header("Setting Popup")]
-    public GameObject settingPopupPanel;
-
     private BoardData boardData = new BoardData();      //바둑판 배열 데이터 관리
     private GomokuRule rule;                            //오목 룰(금수, 승패 판별) 관리자
     private StoneType currentTurn = StoneType.Black;    //현재 턴 저장
@@ -118,40 +115,11 @@ public class DuoGameManager : MonoBehaviour
         if (p2NameText != null) p2NameText.text = p2Name;
 
         SetStatus("[게임 시작] 버튼을 눌러주세요.");
-
-        if (nameInputField != null)
-        {
-            nameInputField.onSubmit.AddListener(delegate { ConfirmNameEdit(); });
-        }
     }
 
     private void Update()
     {
         UpdateCursorVisibility();       //손 커서 업데이트
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (settingPopupPanel != null && settingPopupPanel.activeSelf)
-            {
-                OnClickCloseSetting();
-                return;
-            }
-            else if (nameEditPopup != null && nameEditPopup.activeSelf)
-            {
-                CancelNameEdit();
-                return;
-            }
-            else if (exitConfirmPopup != null && exitConfirmPopup.activeSelf)
-            {
-                CancelExit();
-                return;
-            }
-            else
-            {
-                OnClickSetting();
-                return;
-            }
-        }
 
         //대기 중이거나 끝난 상태면 마우스 화살표를 켜고 클릭 처리를 넘김
         if (isGameOver)
@@ -235,9 +203,6 @@ public class DuoGameManager : MonoBehaviour
 
     public void UndoMove()
     {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlayClickSound();
-
         //뺄 데이터(현재가 첫 수일)가 없거나 게임 종료 상태면 무시
         if (isGameOver || moveHistory.Count == 0)
         {
@@ -601,10 +566,6 @@ public class DuoGameManager : MonoBehaviour
 
             nameInputField.caretPosition = nameInputField.text.Length;
         }
-
-        //이름 변경 팝업창이 열리자마자 바로 타자를 칠 수 있게 커서 활성화
-        nameInputField.Select();
-        nameInputField.ActivateInputField();
     }
 
     public void ConfirmNameEdit()
@@ -752,28 +713,6 @@ public class DuoGameManager : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         SceneManager.LoadScene(SceneName);
-    }
-
-    public void OnClickSetting()
-    {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlayClickSound();
-
-        if (settingPopupPanel != null)
-        {
-            settingPopupPanel.SetActive(true);
-        }
-    }
-
-    public void OnClickCloseSetting()
-    {
-        if (AudioManager.Instance != null)
-            AudioManager.Instance.PlayClickSound();
-
-        if (settingPopupPanel != null)
-        {
-            settingPopupPanel.SetActive(false);
-        }
     }
 
     private void OnDestroy()
