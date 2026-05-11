@@ -85,6 +85,7 @@ public class AIGameManager : MonoBehaviour
 
     private float currentTimer;
 
+    // StoneType 타입 보드를 AI에 적용하기 위한 배열 
     private int[,] intBoard;
 
     private Coroutine statusCoroutine;
@@ -149,6 +150,7 @@ public class AIGameManager : MonoBehaviour
         SetHandSprite();
         SetBowlImage(); 
         SpawnLastPlacedStoneMarker();
+
         playerMouse.SetStoneType(playerStone);
     }
 
@@ -231,13 +233,13 @@ public class AIGameManager : MonoBehaviour
             }
         }
 
+        AudioManager.Instance.PlayStoneSound();
         boardData.SetCell(x, y, currentTurn);
         SpawnStoneVisual(x, y, currentTurn);
         UpdateLastPlacedStoneMarker(x, y);
 
         if (rule.CheckWin(boardData.GetArray(), x, y, currentTurn))
         {
-            // 이펙트 추가 
             EndGame($"{(currentTurn == StoneType.Black ? "흑돌" : "백돌")} 승리!");
             return true;
         }
@@ -255,7 +257,6 @@ public class AIGameManager : MonoBehaviour
     {
         currentTurn = (currentTurn == StoneType.Black) ? StoneType.White : StoneType.Black;
         UpdateTurnTextUI();
-        //SetStatus(""); // 턴이 바뀌면 이전 상태 메시지 지우기
         ResetTimer();
 
         UpdateForbiddenMarkers();
@@ -303,6 +304,11 @@ public class AIGameManager : MonoBehaviour
 
         if (resultText != null)
             resultText.text = currentTurn == aiStone ? "패배" : "승리";
+
+        if (currentTurn == playerStone)
+            AudioManager.Instance.PlayWinSound();
+        else
+            AudioManager.Instance.PlayLossSound(); 
 
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);

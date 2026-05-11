@@ -110,4 +110,8 @@ public class AIPopup : MonoBehaviour
         SceneManager.LoadScene("08_AIGameScene");
     }
 
+    public void OnDeactive()
+    {
+        this.gameObject.SetActive(false);
+    }
 }
