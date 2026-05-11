@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using BackEnd;
+using System.Collections;
 
 public class BackendAuthManager : MonoBehaviour
 {
@@ -12,25 +13,29 @@ public class BackendAuthManager : MonoBehaviour
 
     private const string TableName = "USER_DATA";
 
-    void Start()
+    IEnumerator Start()
     {
-        // 씬 진입 시 ID 입력창에 자동 포커스
+        yield return null;
+
+        EventSystem.current.SetSelectedGameObject(null);
+
+        yield return null;
+
         FocusInput(idInput);
+    }
+
+    void FocusInput(TMP_InputField input)
+    {
+        input.Select();
+        input.ActivateInputField();
+
+        EventSystem.current.SetSelectedGameObject(input.gameObject);
     }
 
     void Update()
     {
         HandleTabNavigation();
         HandleEnterKey();
-    }
-
-    // -------------------------
-    // 입력 포커스 함수
-    // -------------------------
-    void FocusInput(TMP_InputField input)
-    {
-        EventSystem.current.SetSelectedGameObject(input.gameObject);
-        input.ActivateInputField();
     }
 
     // -------------------------
