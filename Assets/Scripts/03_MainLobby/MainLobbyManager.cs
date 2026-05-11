@@ -44,12 +44,13 @@ public class MainLobbyManager : MonoBehaviour
 
         if(aiSettingPopup != null)
         {
-            settingPopupPanel.SetActive(false); 
+            aiSettingPopup.SetActive(false); 
         }
     }
 
     public void OnClickSingleMode()
     {
+        Debug.Log("OnClickSingleMode");
         aiSettingPopup.SetActive(true); 
         // SceneManager.LoadScene(singleLobbyScene);
     }
