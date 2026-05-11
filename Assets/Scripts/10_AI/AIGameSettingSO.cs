@@ -20,6 +20,16 @@ public class AIGameSettingSO : ScriptableObject
         this.isFirstMove = isFirstMove;
     }
 
+    public void SetDifficulty(Difficulty difficulty)
+    {
+        this.difficulty = difficulty;
+    }
+
+    public void SetOrder(bool order)
+    {
+        isFirstMove = order; 
+    }
+
     public Difficulty GetDifficulty() => difficulty; 
     public bool IsFirstMove() => isFirstMove;
 }

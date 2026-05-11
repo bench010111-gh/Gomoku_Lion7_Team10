@@ -22,6 +22,9 @@ public class MainLobbyManager : MonoBehaviour
     [Header("Setting Popup")]
     public GameObject settingPopupPanel;
 
+    [Header("AI Setting Popup")]
+    public GameObject aiSettingPopup; 
+
     void Start()
     {
         if (nicknameText != null && UserSession.Instance != null)
@@ -38,11 +41,18 @@ public class MainLobbyManager : MonoBehaviour
         {
             settingPopupPanel.SetActive(false);
         }
+
+        if(aiSettingPopup != null)
+        {
+            aiSettingPopup.SetActive(false); 
+        }
     }
 
     public void OnClickSingleMode()
     {
-        SceneManager.LoadScene(singleLobbyScene);
+        Debug.Log("OnClickSingleMode");
+        aiSettingPopup.SetActive(true); 
+        // SceneManager.LoadScene(singleLobbyScene);
     }
 
     public void OnClickMultiMode()

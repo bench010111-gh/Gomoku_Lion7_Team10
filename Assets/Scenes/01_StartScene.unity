@@ -686,7 +686,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 774359344}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a4e9ed441b1b0514f96984c194d0bf82, type: 3}
+  m_Script: {fileID: 11500000, guid: 9a74d7bc9e586f745b2173f072a6afbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleImpactBIG
   uiShake: {fileID: 52246099}
@@ -870,9 +870,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a74d7bc9e586f745b2173f072a6afbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TitleImpact
+  m_EditorClassIdentifier: Assembly-CSharp::TitleImpactBIG
   uiShake: {fileID: 52246099}
   boomSFX: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
+  mainBGM: {fileID: 0}
 --- !u!1 &905713402
 GameObject:
   m_ObjectHideFlags: 0
@@ -1358,9 +1359,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9a74d7bc9e586f745b2173f072a6afbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TitleImpact
+  m_EditorClassIdentifier: Assembly-CSharp::TitleImpactBIG
   uiShake: {fileID: 52246099}
   boomSFX: {fileID: 8300000, guid: af88411b3cc942c478282bc3bd69e489, type: 3}
+  mainBGM: {fileID: 0}
 --- !u!1 &1851906594
 GameObject:
   m_ObjectHideFlags: 0
