@@ -43,6 +43,14 @@ using UnityEngine.Audio;
 /// [Volume]
 /// - SetBGMVolume() → BGM 볼륨 조절 (Mixer)
 /// - SetSFXVolume() → SFX 볼륨 조절 (Mixer)
+/// 
+/// [Default SFX]
+/// - PlayStoneSound() → 바둑알 착수음 재생
+/// - PlayClickSound() → UI 버튼 클릭음 재생
+/// - PlayShutterSound() → 셔터 닫히는 사운드 재생
+/// - PlayPopupSound() → 팝업창 열기 사운드 재생
+/// - PlayWinSound() → 승리 사운드 재생
+/// - PlayLossSound() → 패배 사운드 재생
 ///
 /// ------------------------------------------------------------
 /// 📌 다른 스크립트에서 사용 예시:
@@ -89,6 +97,14 @@ public class AudioManager : MonoBehaviour
     public AudioSource sfxPrefab;
     public int poolSize = 10;
     private List<AudioSource> sfxPool = new List<AudioSource>();
+
+    [Header("Default SFX Clips")]
+    public AudioClip stonePlaceClip;
+    public AudioClip buttonClickClip;
+    public AudioClip shutterCrashClip;
+    public AudioClip popupClip;
+    public AudioClip winClip;
+    public AudioClip lossClip;
 
     void Awake()
     {
@@ -235,5 +251,57 @@ public class AudioManager : MonoBehaviour
     {
         value = Mathf.Clamp(value, 0.0001f, 1f);
         mixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
+    }
+
+    // =========================
+    // ✨✨✨ DEFAULT SFX HELPERS ✨✨✨
+    // =========================
+
+    public void PlayStoneSound()
+    {
+        if (stonePlaceClip != null)
+        {       
+            PlaySFX(stonePlaceClip);
+        }
+    }
+
+    public void PlayClickSound()
+    {
+        if (buttonClickClip != null)
+        {
+            PlaySFX(buttonClickClip);
+        }
+    }
+
+    public void PlayShutterSound()
+    {
+        if (shutterCrashClip != null)
+        {
+            PlaySFX(shutterCrashClip);
+        }
+    }
+
+    public void PlayPopupSound()
+    {
+        if (popupClip != null)
+        {
+            PlaySFX(popupClip);
+        }
+    }
+
+    public void PlayWinSound()
+    {
+        if (winClip != null)
+        {
+            PlaySFX(winClip);
+        }
+    }
+
+    public void PlayLossSound()
+    {
+        if (lossClip != null)
+        {
+            PlaySFX(lossClip);
+        }
     }
 }
