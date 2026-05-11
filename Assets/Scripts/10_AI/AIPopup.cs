@@ -107,7 +107,8 @@ public class AIPopup : MonoBehaviour
     }
     void LoadAIScene()
     {
-        SceneManager.LoadScene("08_AIGameScene");
+        SceneTransitionManager.Instance.ChangeScene("08_AIGameScene");
+        //SceneManager.LoadScene("08_AIGameScene");
     }
 
     public void OnDeactive()

@@ -5,9 +5,26 @@ using UnityEngine.SceneManagement;
 public class SceneTransitionManager : MonoBehaviour
 {
     //씬 전환 버튼에 인스턴스 참조해서 사용바람 예시 -> SceneTransitionManager.Instance.ChangeScene("씬이름");
-    public static SceneTransitionManager Instance;
+    private static SceneTransitionManager _instance;
 
-    private bool isInitialLoad = true;
+    public static SceneTransitionManager Instance
+    {
+        get
+        {
+            if(_instance != null) return _instance;
+
+            _instance = FindFirstObjectByType<SceneTransitionManager>();
+
+            if (_instance == null)
+            {
+                Debug.LogWarning("SceneTransitionManager가 씬에 없습니다! 셔터 기능이 작동하지 않습니다.");
+            }
+
+            return _instance;
+        }
+    }
+
+    private bool isTransitioning = false;
 
     [Header("Transition UI")]
     public Canvas transitionCanvas;
@@ -21,13 +38,13 @@ public class SceneTransitionManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        if (_instance == null)
         {
-            Instance = this;
+            _instance = this;
             DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
-        else
+        else if(_instance != this)
         {
             Destroy(gameObject);
         }
@@ -41,12 +58,17 @@ public class SceneTransitionManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (isInitialLoad)
+        if (!isTransitioning)
         {
-            isInitialLoad = false; 
+            if (doorPanel != null)
+            {
+                doorPanel.anchoredPosition = new Vector2(0, doorPanel.rect.height);
+                doorPanel.gameObject.SetActive(false);
+            }
             return;
         }
 
+        isTransitioning = false;
         StopAllCoroutines();
         StartCoroutine(OpenDoorRoutine());
     }
@@ -79,6 +101,9 @@ public class SceneTransitionManager : MonoBehaviour
 
     public void ChangeScene(string sceneName)
     {
+        if (isTransitioning) return;
+
+        isTransitioning = true;
         StartCoroutine(CloseDoorAndGoRoutine(sceneName));
     }
 

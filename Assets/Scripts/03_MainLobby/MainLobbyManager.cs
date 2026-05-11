@@ -57,7 +57,8 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickMultiMode()
     {
-        SceneManager.LoadScene(multiLobbyScene);
+        SceneTransitionManager.Instance.ChangeScene(multiLobbyScene);
+        //SceneManager.LoadScene(multiLobbyScene);
     }
 
     public void OnClickDuoMode()
@@ -87,7 +88,8 @@ public class MainLobbyManager : MonoBehaviour
                 UserSession.Instance.nickname = "";
             }
 
-            SceneManager.LoadScene(loginScene);
+            SceneTransitionManager.Instance.ChangeScene(loginScene);
+           // SceneManager.LoadScene(loginScene);
         }
         else
         {

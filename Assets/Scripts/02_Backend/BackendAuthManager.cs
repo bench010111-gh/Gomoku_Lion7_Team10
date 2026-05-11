@@ -130,7 +130,8 @@ public class BackendAuthManager : MonoBehaviour
         // 유저 데이터 확인 및 생성
         EnsureUserDataExists(id);
 
-        SceneManager.LoadScene("03_MainLobbyScene");
+        SceneTransitionManager.Instance.ChangeScene("03_MainLobbyScene");
+        //SceneManager.LoadScene("03_MainLobbyScene");
     }
 
     // -------------------------
