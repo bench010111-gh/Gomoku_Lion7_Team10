@@ -9,10 +9,9 @@ using UnityEngine.UI;
 
 public class AIGameManager : MonoBehaviour
 {
+    #region Inspector 
     [Header("Game Settings")]
     public AIGameSettingSO settingSO;
-    private int depth;
-    private int timeLimitMs;
 
     [Header("Player")]
     public StoneType playerStone;
@@ -20,67 +19,81 @@ public class AIGameManager : MonoBehaviour
 
     [Header("AI")]
     public AI ai;
-    private int[,] intBoard;
-    private bool isThinking = false;
     public float delay = 0.5f;
 
-    [Header("Board Settings")]
-    //public Vector2 boardOrigin = new Vector2(-4, -3.227f);
-    //public Vector2 boardOrigin = new Vector2(-3.9831f, -3.2897f);
-    public Vector2 boardOrigin;
+    [Header("AI Difficulty")]
+    [SerializeField] private int depth;
+    [SerializeField] private int timeLimitMs;
 
-    // public Vector2 cellSize = new Vector2(0.57f, 0.5f);
-    //public Vector2 cellSize = new Vector2(0.5698f, 0.5011f);
-    public Vector2 cellSize; 
-    public Transform boardRoot;
+    [Header("Board")]
+    [SerializeField] private Transform boardRoot;
+    [SerializeField] private Vector2 boardOrigin = new Vector2(-3.9948f, -3.2802f);
+    [SerializeField] private Vector2 cellSize = new Vector2(0.57f, 0.4993f); 
 
-    [Header("Board Prefabs")]
-    public GameObject blackStonePrefab;
-    public GameObject whiteStonePrefab;
-    public GameObject forbiddenMarkerPrefab;
 
-    [Header("BoardUI")]
-    public TMP_Text turnText;
-    public TMP_Text statusText;
-    public TMP_Text timerText;
+    [Header("Stone Prefabs")]
+    [SerializeField] private GameObject blackStonePrefab;
+    [SerializeField] private GameObject whiteStonePrefab;
 
-    [Header("Timer Settings")]
-    public float timeLimit = 30f;
-    private float currentTimer;
-    private bool isTimerRunning;
-    private bool isCountingDown = false;
+    [Header("Board Effects")]
+    [SerializeField] private GameObject forbiddenMarkerPrefab;
+    [SerializeField] private GameObject lastPlacedStoneMarkerPrefab;
 
-    [Header("GameOver UI")]
-    public GameObject gameOverPanel;
-    public TMP_Text gameOverText;
-    public TMP_Text resultText;
+    [Header("Player Input")]
+    [SerializeField] private PlayerMouse playerMouse; 
 
+    [Header("UI Turn")]
+    [SerializeField] private TMP_Text turnText;
+    [SerializeField] private TMP_Text statusText;
+    [SerializeField] private TMP_Text timerText;
+
+    [Header("UI GameOver")]
+    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private TMP_Text gameOverText;
+    [SerializeField] private TMP_Text resultText;
+
+    [Header("UI Bowl")]
+    [SerializeField] private Image aiBowlImg; 
+    [SerializeField] private Image playerBowlImg;
+
+    [Header("AI Hand")]
+    [SerializeField] private Transform aiHand;
+    [SerializeField] private SpriteRenderer aiHandSr;
+
+    [Header("Hand Sprites")]
+    [SerializeField] private Sprite blackStoneHand;
+    [SerializeField] private Sprite whiteStoneHand;
+
+    [Header("Bowl Sprites")]
+    [SerializeField] private Sprite blackStoneBowl;
+    [SerializeField] private Sprite whiteStoneBowl;
+
+    [Header("Timer")]
+    [SerializeField] private float timeLimit = 30f;
+    #endregion
+
+    #region Runtime 
     private BoardData boardData;
     private GomokuRule rule;
-    private StoneType currentTurn = StoneType.Black;
+
+    private StoneType currentTurn;
+    
     private bool isGameOver = false;
+    private bool isThinking;
+    private bool isTimerRunning; 
+    private bool isCountingDown;
+
+    private float currentTimer;
+
+    private int[,] intBoard;
 
     private Coroutine statusCoroutine;
-    private List<GameObject> forbiddenMarkers = new List<GameObject>();
-
     private WaitForSeconds wait;
 
-    [SerializeField] Transform aiHand;
-    [SerializeField] SpriteRenderer aiHandSr;
-
-    [Header("Sprites")]
-    [SerializeField] Sprite blackStoneHand;
-    [SerializeField] Sprite whiteStoneHand;
-    [SerializeField] Sprite blackStoneBowl;
-    [SerializeField] Sprite whiteStoneBowl; 
-
-
-    [SerializeField] GameObject lastPlacedStoneMarkerPrefab;
     private GameObject lastPlacedStoneMarkerObject;
+    private readonly List<GameObject> forbiddenMarkers = new List<GameObject>();
+    #endregion 
 
-    [SerializeField] PlayerMouse playerMouse;
-    [SerializeField] Image aiBowlImg; 
-    [SerializeField] Image playerBowlImg; 
     void Start()
     {
         Init();
@@ -126,6 +139,8 @@ public class AIGameManager : MonoBehaviour
         boardData = new BoardData();
         rule = new GomokuRule(BoardData.Size);
 
+        currentTurn = StoneType.Black; 
+
         intBoard = new int[BoardData.Size, BoardData.Size];
         wait = new WaitForSeconds(delay);
 
@@ -143,11 +158,11 @@ public class AIGameManager : MonoBehaviour
         {
             case Difficulty.EASY:
                 depth = 1;
-                timeLimitMs = 500;
+                timeLimitMs = 100;
                 break;
             case Difficulty.NORMAL:
                 depth = 3;
-                timeLimitMs = 2000;
+                timeLimitMs = 5000;
                 break;
             case Difficulty.HARD:
                 depth = 10;
@@ -157,8 +172,8 @@ public class AIGameManager : MonoBehaviour
     }
     private void SetOrder()
     {
-        aiStone = settingSO.IsFirstMove() ? StoneType.Black : StoneType.White;
-        playerStone = aiStone == StoneType.Black ? StoneType.White : StoneType.Black;
+        playerStone = settingSO.IsFirstMove() ? StoneType.Black : StoneType.White;
+        aiStone = playerStone == StoneType.Black ? StoneType.White : StoneType.Black;
     }
     private void SetHandSprite()
     {
@@ -355,7 +370,7 @@ public class AIGameManager : MonoBehaviour
     {
         if (timerText != null && !isCountingDown)
         {
-            timerText.text = $"00:{Mathf.CeilToInt(currentTimer)}";
+            timerText.text = $"00:{Mathf.CeilToInt(currentTimer):00}";
 
             if (currentTimer <= 10)
                 timerText.color = Color.red; 
@@ -399,7 +414,6 @@ public class AIGameManager : MonoBehaviour
     private void OnTimeOut()
     {
         Debug.Log("시간초과");
-        SetStatus($"{(currentTurn == StoneType.Black ? "흑" : "백")}! 초읽기 시간 초과! 턴 변경", 1.5f);
         SwitchTurn();
     }
     private void ResetTimer()
