@@ -7,7 +7,8 @@ using TMPro;
 using UnityEngine;
 
 // 멀티 게임 씬에서 색상 배정, 준비/시작, 턴 관리,
-// GomokuRule 기반 착수 규칙 검사, 금수 표시, 승패/무승부 처리를 담당하는 스크립트
+// GomokuRule 기반 착수 규칙 검사, 금수 표시, 승패/무승부/기권 처리,
+// 전적 저장 및 복기용 기보 저장을 담당하는 스크립트
 public class MultiGameManager : MonoBehaviourPunCallbacks
 {
     [Header("Board")]
@@ -39,6 +40,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     private readonly List<GameObject> forbiddenMarks = new List<GameObject>();
 
+    // 복기 저장용 착수 기록
+    private readonly List<OmokMoveRecord> moveRecords = new List<OmokMoveRecord>();
+
+    // 한 판 결과가 중복 저장되는 것 방지
+    private bool hasSavedCurrentMatchResult = false;
+
     private const string PROP_BLACK_ACTOR = "blackActor";
     private const string PROP_WHITE_ACTOR = "whiteActor";
     private const string PROP_BLACK_READY = "blackReady";
@@ -49,6 +56,8 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     private void Start()
     {
         boardData.ClearBoard();
+        moveRecords.Clear();
+        hasSavedCurrentMatchResult = false;
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -290,6 +299,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             return;
         }
 
+        if (Camera.main == null)
+        {
+            SetStatus("Main Camera가 없습니다.");
+            return;
+        }
+
         Vector3 mouseWorld3 = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 mouseWorld = new Vector2(mouseWorld3.x, mouseWorld3.y);
 
@@ -359,13 +374,13 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         if (isWin)
         {
             Debug.Log("[승리판정] 승리 감지됨. 결과 팝업 RPC 호출");
-            HandleGameOverAsMaster(requestedStone, false);
+            HandleGameOverAsMaster(requestedStone, false, false);
             return;
         }
 
         if (gomokuRule.IsDraw(boardData.GetPlacedStoneCount()))
         {
-            HandleGameOverAsMaster(StoneType.Empty, true);
+            HandleGameOverAsMaster(StoneType.Empty, true, false);
             return;
         }
 
@@ -473,10 +488,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             PhotonChatManager.Instance.BroadcastSystemMessage($"{playerName} ({stoneText}) 님이 기권했습니다.");
         }
 
-        HandleGameOverAsMaster(winner, false);
+        // 기권도 승패로 저장되도록 isResign = true
+        HandleGameOverAsMaster(winner, false, true);
     }
 
-    private void HandleGameOverAsMaster(StoneType winner, bool isDraw)
+    private void HandleGameOverAsMaster(StoneType winner, bool isDraw, bool isResign = false)
     {
         string resultMessage;
 
@@ -495,9 +511,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             PhotonChatManager.Instance.BroadcastSystemMessage(resultMessage);
         }
 
-        Debug.Log($"[게임종료] winner={winner}, isDraw={isDraw}, resultMessage={resultMessage}");
+        string matchId = Guid.NewGuid().ToString("N");
 
-        photonView.RPC(nameof(RPC_ShowGameResult), RpcTarget.All, (int)winner, isDraw);
+        Debug.Log($"[게임종료] winner={winner}, isDraw={isDraw}, isResign={isResign}, matchId={matchId}");
+
+        photonView.RPC(nameof(RPC_ShowGameResult), RpcTarget.All, (int)winner, isDraw, isResign, matchId);
 
         Hashtable props = new Hashtable();
         props[PROP_BLACK_READY] = false;
@@ -509,9 +527,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     }
 
     [PunRPC]
-    private void RPC_ShowGameResult(int winnerValue, bool isDraw)
+    private void RPC_ShowGameResult(int winnerValue, bool isDraw, bool isResign, string matchId)
     {
-        Debug.Log($"[결과팝업 RPC] 호출됨 winnerValue={winnerValue}, isDraw={isDraw}");
+        Debug.Log($"[결과팝업 RPC] 호출됨 winnerValue={winnerValue}, isDraw={isDraw}, isResign={isResign}, matchId={matchId}");
 
         StoneType winner = (StoneType)winnerValue;
 
@@ -533,7 +551,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             if (myStone == winner)
             {
                 title = "승리";
-                message = "승리했습니다!";
+                message = isResign ? "상대가 기권하여 승리했습니다!" : "승리했습니다!";
             }
             else if (myStone == StoneType.Empty)
             {
@@ -543,12 +561,96 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             else
             {
                 title = "패배";
-                message = "패배했습니다.";
+                message = isResign ? "기권으로 패배했습니다." : "패배했습니다.";
             }
         }
 
+        SaveResultAndReplay(matchId, winner, isDraw, isResign);
+
         ShowResultPopup(title, message);
         SetStatus(message);
+    }
+
+    private void SaveResultAndReplay(string matchId, StoneType winner, bool isDraw, bool isResign)
+    {
+        if (hasSavedCurrentMatchResult)
+            return;
+
+        hasSavedCurrentMatchResult = true;
+
+        StoneType myStone = GetMyStone();
+
+        // 관전자는 전적/기보 저장하지 않음
+        if (myStone == StoneType.Empty)
+            return;
+
+        string myNickname = PhotonNetwork.NickName;
+        string opponentNickname = GetOpponentNickname();
+
+        bool isWin = !isDraw && myStone == winner;
+        bool isLose = !isDraw && myStone != winner;
+
+        string result;
+
+        if (isDraw)
+            result = "Draw";
+        else if (isWin)
+            result = "Win";
+        else
+            result = "Lose";
+
+        string myStoneText = myStone == StoneType.Black ? "Black" : "White";
+
+        string winnerStoneText;
+
+        if (isDraw)
+            winnerStoneText = "None";
+        else
+            winnerStoneText = winner == StoneType.Black ? "Black" : "White";
+
+        OmokMoveRecordList moveList = new OmokMoveRecordList();
+        moveList.moves = new List<OmokMoveRecord>(moveRecords);
+
+        string movesJson = JsonUtility.ToJson(moveList);
+
+        bool recordUpdated = PlayerDataService.ApplyMatchResult(
+            myNickname,
+            isWin,
+            isLose,
+            isDraw
+        );
+
+        bool historySaved = PlayerDataService.SaveMatchHistory(
+            matchId,
+            PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "UnknownRoom",
+            myNickname,
+            opponentNickname,
+            myStoneText,
+            result,
+            winnerStoneText,
+            isDraw,
+            isResign,
+            movesJson
+        );
+
+        Debug.Log($"[결과 저장] 전적 저장={recordUpdated}, 기보 저장={historySaved}, result={result}, moves={moveRecords.Count}");
+    }
+
+    private string GetOpponentNickname()
+    {
+        StoneType myStone = GetMyStone();
+
+        int opponentActor = -1;
+
+        if (myStone == StoneType.Black)
+            opponentActor = GetWhiteActor();
+        else if (myStone == StoneType.White)
+            opponentActor = GetBlackActor();
+
+        if (opponentActor == -1)
+            return "알 수 없음";
+
+        return GetPlayerNameByActor(opponentActor);
     }
 
     private void ShowResultPopup(string title, string message)
@@ -630,6 +732,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         StoneType stone = (StoneType)stoneValue;
 
         boardData.SetCell(x, y, stone);
+
+        moveRecords.Add(new OmokMoveRecord
+        {
+            turnIndex = moveRecords.Count + 1,
+            x = x,
+            y = y,
+            stone = stoneValue
+        });
+
         SpawnStoneVisual(x, y, stone);
         UpdateUI();
         RefreshForbiddenMarks();
@@ -639,6 +750,9 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     private void RPC_ClearBoardVisuals()
     {
         boardData.ClearBoard();
+        moveRecords.Clear();
+        hasSavedCurrentMatchResult = false;
+
         ClearForbiddenMarks();
         HideResultPopup();
 
