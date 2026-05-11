@@ -75,6 +75,9 @@ public class BackendAuthManager : MonoBehaviour
     // -------------------------
     public void OnClickSignUp()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         string id = idInput.text.Trim();
         string pw = pwInput.text.Trim();
 
@@ -101,6 +104,9 @@ public class BackendAuthManager : MonoBehaviour
     // -------------------------
     public void OnClickLogin()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         string id = idInput.text.Trim();
         string pw = pwInput.text.Trim();
 

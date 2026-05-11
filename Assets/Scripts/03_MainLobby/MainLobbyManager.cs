@@ -50,6 +50,9 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickSingleMode()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         Debug.Log("OnClickSingleMode");
         aiSettingPopup.SetActive(true); 
         // SceneManager.LoadScene(singleLobbyScene);
@@ -57,17 +60,26 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickMultiMode()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         SceneTransitionManager.Instance.ChangeScene(multiLobbyScene);
         //SceneManager.LoadScene(multiLobbyScene);
     }
 
     public void OnClickDuoMode()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         SceneTransitionManager.Instance.ChangeScene(duoLobbyScene);
     }
 
     public void OnClickBack()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(true);
@@ -76,6 +88,9 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickLogoutYes()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         var bro = Backend.BMember.Logout();
 
         if (bro.IsSuccess())
@@ -99,6 +114,9 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickLogoutNo()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(false);
@@ -107,6 +125,9 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickSetting()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (settingPopupPanel != null)
         {
             settingPopupPanel.SetActive(true);
@@ -115,6 +136,9 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickCloseSetting()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (settingPopupPanel != null)
         {
             settingPopupPanel.SetActive(false);
