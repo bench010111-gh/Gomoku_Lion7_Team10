@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 583cbac6ceeb97440990a93a31578652
+guid: 312837dc3678aba4893a4c3b6365f7bd
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6133955390782287844
-    second: multiplayer_thumbnail_0
+      213: -1179297276305794913
+    second: UI2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: multiplayer_thumbnail_0
+      name: UI2_0
       rect:
         serializedVersion: 2
-        x: 85
-        y: 317
-        width: 1365
-        height: 405
+        x: 90
+        y: 263
+        width: 848
+        height: 1076
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c1054583210dfdaa0800000000000000
-      internalID: -6133955390782287844
+      spriteID: f981539106b42afe0800000000000000
+      internalID: -1179297276305794913
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: f8dcefc48ceba5146aa4d1afa7d95008
+    spriteID: bca09805e97785d448ed14427c9e2803
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      multiplayer_thumbnail_0: -6133955390782287844
+      UI2_0: -1179297276305794913
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

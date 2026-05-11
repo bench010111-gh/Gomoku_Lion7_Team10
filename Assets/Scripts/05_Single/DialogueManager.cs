@@ -26,6 +26,26 @@ public class DialogueManager : MonoBehaviour
     [Header("Dialogue Data")]
     [SerializeField] private List<DialogueLine> dialogueLines = new();
 
+    /*
+    =========================================
+    OPTIONAL FADE SYSTEM
+    =========================================
+
+    If you want full-screen fade in/out:
+
+    1. Create FadeScreen under Canvas
+    2. Add:
+        - Black Image
+        - CanvasGroup
+        - FadeManager.cs
+
+    3. Drag FadeManager into this slot
+
+    4. Uncomment the fade lines below
+    */
+
+    [SerializeField] private FadeManager fadeManager;
+
     [Header("Status")]
     public bool isDialogueActive;
     public bool isTyping;
@@ -36,18 +56,47 @@ public class DialogueManager : MonoBehaviour
 
     private Vector2 arrowStartPos;
 
-    void Start()
+    /*
+    =========================================
+    NORMAL START
+    =========================================
+    */
+
+    //void Start()
+    //{
+    //    // Arrow setup
+    //    if (nextArrow != null)
+    //    {
+    //        arrowStartPos = nextArrow.anchoredPosition;
+    //        nextArrow.gameObject.SetActive(false);
+    //    }
+
+    //    // Normal dialogue start
+    //    StartDialogue();
+    //}
+
+    /*
+    =========================================
+    FADE VERSION START
+    =========================================
+    */
+
+    //Uncomment this and comment the normal
+    //Start() above if using FadeManager.
+
+    IEnumerator Start()
     {
-        // Arrow setup
         if (nextArrow != null)
         {
             arrowStartPos = nextArrow.anchoredPosition;
             nextArrow.gameObject.SetActive(false);
         }
 
-        // Start opening dialogue immediately
+        yield return StartCoroutine(fadeManager.FadeIn());
+
         StartDialogue();
     }
+    
 
     void Update()
     {
@@ -188,4 +237,28 @@ public class DialogueManager : MonoBehaviour
             nextArrow.gameObject.SetActive(false);
         }
     }
+
+    /*
+    =========================================
+    OPTIONAL FADE OUT EXAMPLE
+    =========================================
+
+    If you want fade out after dialogue ends:
+
+    1. Uncomment this coroutine
+    2. Replace EndDialogue(); call in NextDialogue()
+       with:
+       StartCoroutine(EndDialogueWithFade());
+
+    IEnumerator EndDialogueWithFade()
+    {
+        EndDialogue();
+
+        yield return StartCoroutine(fadeManager.FadeOut());
+
+        // Load next scene
+        // Show result screen
+        // Start gameplay
+    }
+    */
 }
