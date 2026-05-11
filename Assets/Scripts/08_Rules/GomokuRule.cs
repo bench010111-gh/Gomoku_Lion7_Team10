@@ -39,6 +39,35 @@ public class GomokuRule //렌주룰 규칙(금수), 심판역할
 
         return false;
     }
+    public bool CheckWin(StoneType[,] board, int x, int y, StoneType color, out List<(int x, int y)> winLine)
+    {
+        winLine = new List<(int x, int y)>(); 
+
+        int[,] directions = { { 1, 0 }, { 0, 1 }, { 1, 1 }, { 1, -1 } };
+
+        for (int i = 0; i < 4; i++)
+        {
+            int dx = directions[i, 0];
+            int dy = directions[i, 1];
+
+            int count = 1;
+
+            //한쪽 방향으로 뻗어나가며 같은 색의 돌을 탐색
+            count += CountStones(board, x, y, dx, dy, color);
+
+            //반대 방향으로 뻗어나가며 같은 색 돌을 마저 탐색
+            count += CountStones(board, x, y, -dx, -dy, color);
+
+            //흑돌은 무조건 5수여야 승리(장목 승리 금지)
+            if (color == StoneType.Black && count == 5)
+                return true;
+            //백돌은 5수 이상이라면 승리
+            if (color == StoneType.White && count >= 5)
+                return true;
+        }
+
+        return false;
+    }
 
     //오목판이 가득 찼는지 판별하는 함수
     public bool IsDraw(int placedStoneCount)
