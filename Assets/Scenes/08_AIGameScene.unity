@@ -2927,7 +2927,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1876216749
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3145,29 +3145,31 @@ MonoBehaviour:
   aiStone: 1
   ai: {fileID: 769447493}
   delay: 0.5
+  depth: 0
+  timeLimitMs: 0
+  boardRoot: {fileID: 1508078780}
   boardOrigin: {x: -3.9948, y: -3.2802}
   cellSize: {x: 0.57, y: 0.4993}
-  boardRoot: {fileID: 1508078780}
   blackStonePrefab: {fileID: 8145813704967578605, guid: fd4c2b5ce82e37d48972e92981f374fa, type: 3}
   whiteStonePrefab: {fileID: 1797403911820951310, guid: a2de87fc9af934a4aa01bb8bc16c8324, type: 3}
   forbiddenMarkerPrefab: {fileID: 2711491183466840503, guid: 389c6d497d7bd774dbb0164e83f96bda, type: 3}
+  lastPlacedStoneMarkerPrefab: {fileID: 1797403911820951310, guid: 6d52176d7d9221f44931ac978644b8ad, type: 3}
+  playerMouse: {fileID: 1011329940}
   turnText: {fileID: 52669074}
   statusText: {fileID: 1449111989}
   timerText: {fileID: 1027391796}
-  timeLimit: 30
   gameOverPanel: {fileID: 1876216748}
   gameOverText: {fileID: 1314241015}
   resultText: {fileID: 1213490443}
+  aiBowlImg: {fileID: 2018520923}
+  playerBowlImg: {fileID: 997393773}
   aiHand: {fileID: 1912807135}
   aiHandSr: {fileID: 1860179508}
   blackStoneHand: {fileID: 2594348590020794623, guid: fe86c48da4a3f0b42b1de027ac4bd27b, type: 3}
   whiteStoneHand: {fileID: -637055807977145609, guid: e7be87770168dc44d8c5106cc10de19d, type: 3}
   blackStoneBowl: {fileID: -6876668578084024359, guid: 5af66a90b08bc514bace5f6d35df5f45, type: 3}
   whiteStoneBowl: {fileID: 6090415831815367391, guid: f814ad0daee6f454381a55418cab1450, type: 3}
-  lastPlacedStoneMarkerPrefab: {fileID: 1797403911820951310, guid: 6d52176d7d9221f44931ac978644b8ad, type: 3}
-  playerMouse: {fileID: 1011329940}
-  aiBowlImg: {fileID: 2018520923}
-  playerBowlImg: {fileID: 997393773}
+  timeLimit: 30
 --- !u!1 &2018520920
 GameObject:
   m_ObjectHideFlags: 0
