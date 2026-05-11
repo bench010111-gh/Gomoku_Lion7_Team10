@@ -64,17 +64,11 @@ public class DuoGameManager : MonoBehaviour
     public Sprite defaultPointerSprite;             //평소 손 이미지 스프라이트
     public Sprite clickPointerSprite;               //클릭 시 손 이미지 스프라이트
 
+    [Header("Setting Popup")]
+    public GameObject settingPopupPanel;
+
     [Header("LoadScene")]
-    public string SceneName = "";                   //씬 이동을 위한 문자열변수
-
-    [Header("Transition Animation")]
-    public RectTransform doorPanel;                 //셔터 이미지
-    public float doorAnimSpeed = 0.5f;              //문이 닫히는 데 걸리는 시간
-
-    [Header("Bounce Effect")]
-    public float bounceDuration = 0.2f;             // 흔들리는 시간 (초)
-    public float bounceHeight = 30f;                // 튕겨 오르는 높이 (픽셀)
-    public float bounceSpeed = 40f;                 // 진동 속도 (숫자가 클수록 다라락 떨림)
+    public string targetSceneName = "LobbyScene";
 
     private BoardData boardData = new BoardData();      //바둑판 배열 데이터 관리
     private GomokuRule rule;                            //오목 룰(금수, 승패 판별) 관리자
@@ -115,17 +109,50 @@ public class DuoGameManager : MonoBehaviour
         if (p2NameText != null) p2NameText.text = p2Name;
 
         SetStatus("[게임 시작] 버튼을 눌러주세요.");
+
+        if (nameInputField != null)
+        {
+            nameInputField.onSubmit.AddListener(delegate { ConfirmNameEdit(); });
+        }
     }
 
     private void Update()
     {
         UpdateCursorVisibility();       //손 커서 업데이트
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            // 1순위: 환경설정 창이 켜져 있다면 닫기
+            if (settingPopupPanel != null && settingPopupPanel.activeSelf)
+            {
+                OnClickCloseSetting();
+                return; // 하나 닫았으므로 아래 코드는 무시
+            }
+            // 2순위: 이름 변경 창이 켜져 있다면 닫기
+            else if (nameEditPopup != null && nameEditPopup.activeSelf)
+            {
+                CancelNameEdit();
+                return;
+            }
+            // 3순위: 나가기 확인 창이 켜져 있다면 닫기
+            else if (exitConfirmPopup != null && exitConfirmPopup.activeSelf)
+            {
+                CancelExit();
+                return;
+            }
+            // 4순위: 아무 팝업도 안 켜져 있고, 게임이 진행 중일 때 환경설정 켜기
+            else
+            {
+                OnClickSetting();
+                return;
+            }
+        }
+
         //대기 중이거나 끝난 상태면 마우스 화살표를 켜고 클릭 처리를 넘김
         if (isGameOver)
         {
             return;
-        }
+        }     
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -203,6 +230,9 @@ public class DuoGameManager : MonoBehaviour
 
     public void UndoMove()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         //뺄 데이터(현재가 첫 수일)가 없거나 게임 종료 상태면 무시
         if (isGameOver || moveHistory.Count == 0)
         {
@@ -566,6 +596,9 @@ public class DuoGameManager : MonoBehaviour
 
             nameInputField.caretPosition = nameInputField.text.Length;
         }
+
+        nameInputField.Select();
+        nameInputField.ActivateInputField();
     }
 
     public void ConfirmNameEdit()
@@ -644,75 +677,39 @@ public class DuoGameManager : MonoBehaviour
             exitConfirmPopup.SetActive(false); // 팝업창 끄기
         }
 
-        // 기존 GoToLobby()에 있던 셔터 애니메이션 및 씬 이동 로직 실행
-        if (doorPanel != null)
-        {
-            isGameOver = true;
-            StartCoroutine(CloseDoorAndGoToLobbyRoutine());
+        isGameOver = true;
+
+        if (SceneTransitionManager.Instance != null)
+        {         
+            SceneTransitionManager.Instance.ChangeScene(targetSceneName);
         }
         else
         {
             Cursor.visible = true;
-            SceneManager.LoadScene(SceneName);
+            SceneManager.LoadScene(targetSceneName);
         }
     }
 
-    private IEnumerator CloseDoorAndGoToLobbyRoutine()
+    public void OnClickSetting()
     {
-        doorPanel.gameObject.SetActive(true);
-        Vector2 startPos = doorPanel.anchoredPosition;
-        Vector2 endPos = Vector2.zero;
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
 
-        bool hasPlayedSound = false;
-
-        float soundOffset = 0.08f;
-
-        float timer = 0f;
-        while (timer < doorAnimSpeed)
+        if (settingPopupPanel != null)
         {
-            timer += Time.deltaTime;
-            float t = timer / doorAnimSpeed;
-            //t = Mathf.Sin(t * Mathf.PI * 0.5f);
-            t = t * t;
-            doorPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
-
-            if (!hasPlayedSound && timer >= (doorAnimSpeed - soundOffset))
-            {
-                if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.PlayShutterSound();
-                }
-                hasPlayedSound = true; // 스위치를 꺼서 중복 재생 방지
-            }
-
-            yield return null;
+            settingPopupPanel.SetActive(true);
         }
+    }
 
-        if (!hasPlayedSound && AudioManager.Instance != null)
+    public void OnClickCloseSetting()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (settingPopupPanel != null)
         {
-            AudioManager.Instance.PlayShutterSound();
+            settingPopupPanel.SetActive(false);
         }
-
-        float shakeTimer = 0f;
-
-        while (shakeTimer < bounceDuration)
-        {
-            shakeTimer += Time.deltaTime;
-
-            float damping = 1.0f - (shakeTimer / bounceDuration);
-
-            float bounceY = Mathf.Sin(shakeTimer * bounceSpeed) * bounceHeight * damping;
-
-            doorPanel.anchoredPosition = endPos + new Vector2(0, bounceY);
-            yield return null;
-        }
-
-        doorPanel.anchoredPosition = endPos;
-        yield return new WaitForSeconds(0.75f);
-
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
-        SceneManager.LoadScene(SceneName);
     }
 
     private void OnDestroy()

@@ -1,10 +1,14 @@
+using System.Collections;
 using UnityEngine;
 
-public class TitleImpact : MonoBehaviour
+public class TitleImpactBIG : MonoBehaviour
 {
     private bool hasLanded = false;
+
     public UIShake uiShake;
+
     public AudioClip boomSFX;
+    public AudioClip mainBGM;
 
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -14,21 +18,32 @@ public class TitleImpact : MonoBehaviour
         {
             hasLanded = true;
 
-            // boom sfx
-            AudioManager.Instance.PlaySFX(boomSFX, 1.0f);
+            // BOOM SFX
+            AudioManager.Instance.PlaySFX(boomSFX);
 
-            // Camera shake
+            // DELAYED BGM
+            StartCoroutine(PlayBGMDelayed(0.1f));
+
+            // CAMERA SHAKE
             CameraShake camShake = Camera.main.GetComponent<CameraShake>();
+
             if (camShake != null)
             {
                 StartCoroutine(camShake.Shake(0.2f, 0.15f));
             }
 
-            // UI shake
+            // UI SHAKE
             if (uiShake != null)
             {
                 StartCoroutine(uiShake.Shake(0.2f, 10f));
             }
         }
+    }
+
+    IEnumerator PlayBGMDelayed(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        AudioManager.Instance.PlayBGM(mainBGM);
     }
 }
