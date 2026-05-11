@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6050147688047590138}
   - component: {fileID: 6993923340521126746}
   - component: {fileID: 7678381235690507596}
+  - component: {fileID: 789265173460149326}
   m_Layer: 5
   m_Name: GlobalShutterCanvas
   m_TagString: Untagged
@@ -103,6 +104,24 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &789265173460149326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2338320114153195254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbaa41e49fbb50d46a97a8fb7c266e45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionManager
+  transitionCanvas: {fileID: 0}
+  doorPanel: {fileID: 0}
+  doorAnimSpeed: 0.5
+  bounceDuration: 0.2
+  bounceHeight: 30
+  bounceSpeed: 40
 --- !u!1 &5300571552726995518
 GameObject:
   m_ObjectHideFlags: 0

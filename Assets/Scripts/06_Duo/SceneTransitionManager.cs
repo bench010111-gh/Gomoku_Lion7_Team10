@@ -7,6 +7,8 @@ public class SceneTransitionManager : MonoBehaviour
     //씬 전환 버튼에 인스턴스 참조해서 사용바람 예시 -> SceneTransitionManager.Instance.ChangeScene("씬이름");
     public static SceneTransitionManager Instance;
 
+    private bool isInitialLoad = true;
+
     [Header("Transition UI")]
     public Canvas transitionCanvas;
     public RectTransform doorPanel;
@@ -31,20 +33,20 @@ public class SceneTransitionManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        StartCoroutine(OpenDoorRoutine());
-    }
-
     private void OnDestroy()
     {
         if (Instance == this)
             SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    // ✨✨ 1. 입장 연출 (새로운 씬이 열릴 때마다 자동 실행)
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (isInitialLoad)
+        {
+            isInitialLoad = false; 
+            return;
+        }
+
         StopAllCoroutines();
         StartCoroutine(OpenDoorRoutine());
     }

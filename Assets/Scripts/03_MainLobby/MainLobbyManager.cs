@@ -62,7 +62,7 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickDuoMode()
     {
-        SceneManager.LoadScene(duoLobbyScene);
+        SceneTransitionManager.Instance.ChangeScene(duoLobbyScene);
     }
 
     public void OnClickBack()

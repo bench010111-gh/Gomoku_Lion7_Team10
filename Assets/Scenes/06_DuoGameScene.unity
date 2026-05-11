@@ -7585,6 +7585,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GlobalShutterCanvas
       objectReference: {fileID: 0}
+    - target: {fileID: 5300571552726995518, guid: 008b2aed8f452114f82dcac44b2c0bdb, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6050147688047590138, guid: 008b2aed8f452114f82dcac44b2c0bdb, type: 3}
       propertyPath: m_Camera
       value: 
