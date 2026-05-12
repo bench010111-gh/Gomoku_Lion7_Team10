@@ -399,6 +399,8 @@ public class AIGameManager : MonoBehaviour
 
         if (currentTurn == playerStone)
         {
+            SetGameplayObjects(false);
+
             StartCoroutine(WinDialogueRoutine());
         }
         else
