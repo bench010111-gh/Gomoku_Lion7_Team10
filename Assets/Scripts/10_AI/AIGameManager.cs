@@ -37,8 +37,10 @@ public class AIGameManager : MonoBehaviour
     [Header("Board")]
     [SerializeField] private Transform boardRoot;
     [SerializeField] private Vector2 boardOrigin = new Vector2(-3.9948f, -3.2802f);
-    [SerializeField] private Vector2 cellSize = new Vector2(0.57f, 0.4993f); 
+    [SerializeField] private Vector2 cellSize = new Vector2(0.57f, 0.4993f);
 
+    [Header("Objects Enabled After Dialogue")]
+    [SerializeField] private List<GameObject> gameplayObjects;
 
     [Header("Stone Prefabs")]
     [SerializeField] private GameObject blackStonePrefab;
@@ -128,6 +130,8 @@ public class AIGameManager : MonoBehaviour
         dialogueManager.StartDialogue();
 
         yield return new WaitUntil(() => dialogueManager.IsFinished);
+
+        SetGameplayObjects(true);
 
         yield return StartCoroutine(StartCountDownRoutine());
     }
@@ -253,6 +257,15 @@ public class AIGameManager : MonoBehaviour
         aiBowlImg.sprite = aiStone == StoneType.Black ? blackStoneBowl : whiteStoneBowl; 
         playerBowlImg.sprite = playerStone == StoneType.Black ? blackStoneBowl : whiteStoneBowl;
     }
+
+    private void SetGameplayObjects(bool active)
+    {
+        foreach (GameObject obj in gameplayObjects)
+        {
+            if (obj != null)
+                obj.SetActive(active);
+        }
+    }
     #endregion 
 
     #region Input
@@ -358,6 +371,8 @@ public class AIGameManager : MonoBehaviour
 
         statusText.gameObject.SetActive(true);
         turnText.gameObject.SetActive(false);
+
+        SetGameplayObjects(false);
 
         StartCoroutine(StartDialogueRoutine());
     }

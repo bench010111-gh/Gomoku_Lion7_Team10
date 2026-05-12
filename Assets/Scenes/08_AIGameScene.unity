@@ -1698,6 +1698,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 372691179}
     m_Modifications:
+    - target: {fileID: 420496056949957495, guid: e3fdb090bbb0dc346ab03dd5576c6042, type: 3}
+      propertyPath: m_text
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 4377612971121560777, guid: e3fdb090bbb0dc346ab03dd5576c6042, type: 3}
       propertyPath: m_Name
       value: DialogueSystem
@@ -1789,6 +1793,10 @@ PrefabInstance:
     - target: {fileID: 6191070542718438784, guid: e3fdb090bbb0dc346ab03dd5576c6042, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7384940970025848132, guid: e3fdb090bbb0dc346ab03dd5576c6042, type: 3}
+      propertyPath: m_text
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8064955738555280136, guid: e3fdb090bbb0dc346ab03dd5576c6042, type: 3}
       propertyPath: m_IsActive
@@ -3835,6 +3843,10 @@ MonoBehaviour:
   boardRoot: {fileID: 1508078780}
   boardOrigin: {x: -3.9948, y: -3.2802}
   cellSize: {x: 0.57, y: 0.4993}
+  gameplayObjects:
+  - {fileID: 216209582}
+  - {fileID: 54809545}
+  - {fileID: 1269879509}
   blackStonePrefab: {fileID: 8145813704967578605, guid: fd4c2b5ce82e37d48972e92981f374fa, type: 3}
   whiteStonePrefab: {fileID: 1797403911820951310, guid: a2de87fc9af934a4aa01bb8bc16c8324, type: 3}
   forbiddenMarkerPrefab: {fileID: 2711491183466840503, guid: 389c6d497d7bd774dbb0164e83f96bda, type: 3}
