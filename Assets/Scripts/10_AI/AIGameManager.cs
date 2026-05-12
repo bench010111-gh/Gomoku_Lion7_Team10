@@ -25,6 +25,15 @@ public class AIGameManager : MonoBehaviour
     [SerializeField] private int depth;
     [SerializeField] private int timeLimitMs;
 
+    [Header("Dialogue Data")]
+    [SerializeField] private DialogueData easyIntroDialogue;
+    [SerializeField] private DialogueData normalIntroDialogue;
+    [SerializeField] private DialogueData hardIntroDialogue;
+
+    [SerializeField] private DialogueData easyWinDialogue;
+    [SerializeField] private DialogueData normalWinDialogue;
+    [SerializeField] private DialogueData hardWinDialogue;
+
     [Header("Board")]
     [SerializeField] private Transform boardRoot;
     [SerializeField] private Vector2 boardOrigin = new Vector2(-3.9948f, -3.2802f);
@@ -56,6 +65,9 @@ public class AIGameManager : MonoBehaviour
     [SerializeField] private Image aiBowlImg; 
     [SerializeField] private Image playerBowlImg;
 
+    [Header("Dialogue")]
+    [SerializeField] private DialogueManager dialogueManager;
+
     [Header("AI Hand")]
     [SerializeField] private Transform aiHand;
     [SerializeField] private SpriteRenderer aiHandSr;
@@ -70,6 +82,7 @@ public class AIGameManager : MonoBehaviour
 
     [Header("Timer")]
     [SerializeField] private float timeLimit = 30f;
+
     #endregion
 
     #region Runtime 
@@ -93,7 +106,56 @@ public class AIGameManager : MonoBehaviour
 
     private GameObject lastPlacedStoneMarkerObject;
     private readonly List<GameObject> forbiddenMarkers = new List<GameObject>();
-    #endregion 
+    #endregion
+
+    private IEnumerator StartDialogueRoutine()
+    {
+        switch (settingSO.GetDifficulty())
+        {
+            case Difficulty.EASY:
+                dialogueManager.SetDialogue(easyIntroDialogue);
+                break;
+
+            case Difficulty.NORMAL:
+                dialogueManager.SetDialogue(normalIntroDialogue);
+                break;
+
+            case Difficulty.HARD:
+                dialogueManager.SetDialogue(hardIntroDialogue);
+                break;
+        }
+
+        dialogueManager.StartDialogue();
+
+        yield return new WaitUntil(() => dialogueManager.IsFinished);
+
+        yield return StartCoroutine(StartCountDownRoutine());
+    }
+
+    private IEnumerator WinDialogueRoutine()
+    {
+        switch (settingSO.GetDifficulty())
+        {
+            case Difficulty.EASY:
+                dialogueManager.SetDialogue(easyWinDialogue);
+                break;
+
+            case Difficulty.NORMAL:
+                dialogueManager.SetDialogue(normalWinDialogue);
+                break;
+
+            case Difficulty.HARD:
+                dialogueManager.SetDialogue(hardWinDialogue);
+                break;
+        }
+
+        dialogueManager.StartDialogue();
+
+        yield return new WaitUntil(() => dialogueManager.IsFinished);
+
+        if (gameOverPanel != null)
+            gameOverPanel.SetActive(true);
+    }
 
     void Start()
     {
@@ -103,6 +165,11 @@ public class AIGameManager : MonoBehaviour
 
     void Update()
     {
+        if (dialogueManager != null && dialogueManager.isDialogueActive)
+        {
+            return;
+        }
+
         if (isGameOver || isCountingDown) return;
 
         if (isTimerRunning)
@@ -292,7 +359,7 @@ public class AIGameManager : MonoBehaviour
         statusText.gameObject.SetActive(true);
         turnText.gameObject.SetActive(false);
 
-        StartCoroutine(StartCountDownRoutine());
+        StartCoroutine(StartDialogueRoutine());
     }
     private void EndGame(string message)
     {
@@ -310,10 +377,20 @@ public class AIGameManager : MonoBehaviour
         if (currentTurn == playerStone)
             AudioManager.Instance.PlayWinSound();
         else
-            AudioManager.Instance.PlayLossSound(); 
+            AudioManager.Instance.PlayLossSound();
 
-        if (gameOverPanel != null)
-            gameOverPanel.SetActive(true);
+        //if (gameOverPanel != null)
+        //    gameOverPanel.SetActive(true);
+
+        if (currentTurn == playerStone)
+        {
+            StartCoroutine(WinDialogueRoutine());
+        }
+        else
+        {
+            if (gameOverPanel != null)
+                gameOverPanel.SetActive(true);
+        }
     }
     #endregion
 

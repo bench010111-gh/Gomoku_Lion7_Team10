@@ -386,7 +386,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DialogueManager
   dialogueUI: {fileID: 4377612971121560777}
-  canvasGroup: {fileID: 1937152706731119584}
   nameBox: {fileID: 420496056949957495}
   dialogueText: {fileID: 7384940970025848132}
   speakerImage: {fileID: 9010931081726348042}
@@ -394,7 +393,6 @@ MonoBehaviour:
   arrowFloatAmount: 10
   arrowFloatSpeed: 3
   typingSpeed: 0.03
-  fadeSpeed: 3
   dialogueLines:
   - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
     dialogueText: "\u266A\uC5B4\uAC90 \uC5D4 \uC5B4\uAC90 \uC5D4 \uC5B4\uAC90 \uC5D4
@@ -407,6 +405,7 @@ MonoBehaviour:
   - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
     dialogueText: "\uBCF4\uC774, \uBB34\uC5C7\uC744 \uCC3E\uB294\uAC74\uAC00?"
     speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}
+  fadeManager: {fileID: 0}
   isDialogueActive: 0
   isTyping: 0
 --- !u!1 &7052627676593114871
@@ -632,7 +631,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2162535576011963956}
-  - component: {fileID: 1937152706731119584}
   m_Layer: 5
   m_Name: DialoguePanel
   m_TagString: Untagged
@@ -663,18 +661,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!225 &1937152706731119584
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8064955738555280136}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!1 &8216615078080442220
 GameObject:
   m_ObjectHideFlags: 0

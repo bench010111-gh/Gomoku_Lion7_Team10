@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 85dd5ef09391496459e259f80a31dc3d
+guid: 25cb75c6df166be49a842f459d1106f1
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3498594231989565091
-    second: jarvan8402_0
+      213: 617562206183986790
+    second: player_portrait_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,23 +113,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: jarvan8402_0
+      name: player_portrait_0
       rect:
         serializedVersion: 2
-        x: 138
-        y: 47
-        width: 705
-        height: 958
+        x: 0
+        y: 0
+        width: 315
+        height: 400
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a6f7faeae08d8030800000000000000
-      internalID: 3498594231989565091
+      spriteID: 6669d46fd85029800800000000000000
+      internalID: 617562206183986790
       vertices: []
       indices: 
       edges: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 1092360e0ea823f4781c858e1bdf59b7
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      jarvan8402_0: 3498594231989565091
+      player_portrait_0: 617562206183986790
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

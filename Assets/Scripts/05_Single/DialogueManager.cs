@@ -49,6 +49,7 @@ public class DialogueManager : MonoBehaviour
     [Header("Status")]
     public bool isDialogueActive;
     public bool isTyping;
+    public bool IsFinished { get; private set; }
 
     private int currentLineIndex;
 
@@ -130,10 +131,17 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    public void SetDialogue(DialogueData data)
+    {
+        dialogueLines = data.lines;
+    }
+
     public void StartDialogue()
     {
         if (dialogueLines.Count == 0)
             return;
+
+        IsFinished = false;
 
         currentLineIndex = 0;
 
@@ -142,6 +150,11 @@ public class DialogueManager : MonoBehaviour
         dialogueUI.SetActive(true);
 
         ShowLine();
+    }
+
+    public void SetDialogue(List<DialogueLine> newLines)
+    {
+        dialogueLines = newLines;
     }
 
     void ShowLine()
@@ -226,6 +239,8 @@ public class DialogueManager : MonoBehaviour
     void EndDialogue()
     {
         isDialogueActive = false;
+
+        IsFinished = true;
 
         dialogueUI.SetActive(false);
 

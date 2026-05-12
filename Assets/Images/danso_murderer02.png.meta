@@ -116,12 +116,12 @@ TextureImporter:
       name: danso_murderer02_0
       rect:
         serializedVersion: 2
-        x: 11
-        y: 0
-        width: 1494
-        height: 1024
+        x: 363
+        y: 78
+        width: 654
+        height: 846
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 03d09922a836cd244a12d82853c46562
     internalID: 0
     vertices: []
     indices: 
