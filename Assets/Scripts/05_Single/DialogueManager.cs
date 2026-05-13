@@ -138,8 +138,11 @@ public class DialogueManager : MonoBehaviour
 
     public void StartDialogue()
     {
-        if (dialogueLines.Count == 0)
+        if (dialogueLines == null || dialogueLines.Count == 0)
+        {
+            IsFinished = true;
             return;
+        }
 
         IsFinished = false;
 
