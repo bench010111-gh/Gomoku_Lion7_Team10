@@ -36,7 +36,7 @@ public class AI : MonoBehaviour
     public float defenseWeight = 1.2f; 
 
     // 시간 제한(ms) 내에서 Iterative Deepening으로 최선의 수를 반환합니다.
-    public Vector2Int GetBestMove(int[,] board, int player, long timeLimitMs = 3000, int maxDepth = 10)
+    public Vector2Int GetBestMove(int[,] board, int player, long timeLimitMs = 3000, int maxDepth = 15)
     {
         timeLimit = timeLimitMs;
         stopwatch = Stopwatch.StartNew();
