@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class AIGameManager : MonoBehaviour
@@ -96,7 +95,7 @@ public class AIGameManager : MonoBehaviour
     private bool isGameOver = false;
     private bool isThinking;
     private bool isTimerRunning; 
-    private bool isCountingDown;
+    private bool isCountingDown = true;
 
     private float currentTimer;
 
@@ -105,6 +104,7 @@ public class AIGameManager : MonoBehaviour
 
     private Coroutine statusCoroutine;
     private WaitForSeconds wait;
+    Sequence aiSequence;
 
     private GameObject lastPlacedStoneMarkerObject;
     private readonly List<GameObject> forbiddenMarkers = new List<GameObject>();
@@ -235,11 +235,11 @@ public class AIGameManager : MonoBehaviour
                 break;
             case Difficulty.NORMAL:
                 depth = 3;
-                timeLimitMs = 5000;
+                timeLimitMs = 1000;
                 break;
             case Difficulty.HARD:
-                depth = 10;
-                timeLimitMs = 3000;
+                depth = 15;
+                timeLimitMs = 10000;
                 break;
         }
     }
@@ -594,8 +594,8 @@ public class AIGameManager : MonoBehaviour
         aiHand.localScale = Vector3.one * 1.5f;
         aiHand.gameObject.SetActive(true);
 
-        Sequence aiSequence = DOTween.Sequence();
-
+        // Sequence aiSequence = DOTween.Sequence();
+        aiSequence = DOTween.Sequence(); 
         aiSequence.Append(
             aiHand.DOMove(targetPos, moveDuration).SetEase(moveEase)
         ).Join(
@@ -626,8 +626,13 @@ public class AIGameManager : MonoBehaviour
     }
     public void LoadMainScene()
     {
-        playerMouse.OnActiveCursor(); 
-        SceneManager.LoadScene("03_MainLobbyScene");
+        aiSequence.Kill(); 
+        
+        playerMouse.OnActiveCursor();
+
+        if (SceneTransitionManager.Instance != null)
+            SceneTransitionManager.Instance.ChangeScene("03_MainLobbyScene");
+        // SceneManager.LoadScene("03_MainLobbyScene");
     }
     #endregion 
 }
