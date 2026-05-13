@@ -40,6 +40,15 @@ public class TitleImpactBIG : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        // ¶¥¿¡ ´ê±âµµ Àü¿¡ ¾ÀÀ» ½ºÅµÇØ¹ö·È´Ù¸é? -> °­Á¦·Î BGM Àç»ý!
+        if (!hasLanded && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayBGM(mainBGM);
+        }
+    }
+
     IEnumerator PlayBGMDelayed(float delay)
     {
         yield return new WaitForSeconds(delay);
