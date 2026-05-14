@@ -238,7 +238,7 @@ public class AIGameManager : MonoBehaviour
                 timeLimitMs = 1000;
                 break;
             case Difficulty.HARD:
-                depth = 6;
+                depth = 10;
                 timeLimitMs = 10000;
                 break;
         }

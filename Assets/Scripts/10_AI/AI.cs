@@ -143,7 +143,7 @@ public class AI : MonoBehaviour
 
         foreach (var (pos, _) in sorted)
         {
-            if (IsTimeOut()) break;
+            if (IsTimeOut()) throw new TimeoutException();  
 
             board[pos.x, pos.y] = player;
             UpdateScoreCache(pos.x, pos.y, board, player, true);
@@ -165,11 +165,7 @@ public class AI : MonoBehaviour
                 if (alpha >= beta)
                     break;
             }
-            catch (TimeoutException)
-            {
-                isTimeOut = true;
-                break;
-            }
+
             finally
             {
                 board[pos.x, pos.y] = 0;
