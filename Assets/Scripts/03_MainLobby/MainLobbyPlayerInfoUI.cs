@@ -22,7 +22,7 @@ public class MainLobbyPlayerInfoUI : MonoBehaviour
     {
         if (UserSession.Instance != null)
         {
-            nicknameText.text = $"플레이어: {UserSession.Instance.nickname}";
+            nicknameText.text = $"회원명: {UserSession.Instance.nickname}";
         }
 
         var bro = Backend.PlayerData.GetMyData(TableName, new string[] { "winCount", "loseCount", "drawCount" }, 1);
@@ -30,7 +30,7 @@ public class MainLobbyPlayerInfoUI : MonoBehaviour
         if (!bro.IsSuccess())
         {
             winRateText.text = "승률 불러오기 실패";
-            Debug.LogError("플레이어 데이터 조회 실패: " + bro);
+            Debug.LogError("회원정보 조회 실패: " + bro);
             return;
         }
 
