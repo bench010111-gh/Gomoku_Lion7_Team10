@@ -139,7 +139,7 @@ public class AIGameManager : MonoBehaviour
         if (playerMouse != null)
         {
             playerMouse.gameObject.SetActive(true);
-            playerMouse.SetStoneType(currentTurn);
+            playerMouse.SetStoneType(playerStone);
         }
 
         Cursor.visible = false;
