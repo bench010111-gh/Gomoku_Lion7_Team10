@@ -112,6 +112,9 @@ public class AIGameManager : MonoBehaviour
 
     private IEnumerator StartDialogueRoutine()
     {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         switch (settingSO.GetDifficulty())
         {
             case Difficulty.EASY:
@@ -133,11 +136,22 @@ public class AIGameManager : MonoBehaviour
 
         SetGameplayObjects(true);
 
+        if (playerMouse != null)
+        {
+            playerMouse.gameObject.SetActive(true);
+            playerMouse.SetStoneType(currentTurn);
+        }
+
+        Cursor.visible = false;
+
         yield return StartCoroutine(StartCountDownRoutine());
     }
 
     private IEnumerator WinDialogueRoutine()
     {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         switch (settingSO.GetDifficulty())
         {
             case Difficulty.EASY:
@@ -181,6 +195,11 @@ public class AIGameManager : MonoBehaviour
             currentTimer -= Time.deltaTime;
             UpdateTimerUI();
             if (currentTimer <= 0f) { isTimerRunning = false; OnTimeOut(); }
+        }
+
+        if (Cursor.visible == true)
+        {
+            Cursor.visible = false;
         }
 
         if (currentTurn == playerStone)

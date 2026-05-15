@@ -42,6 +42,9 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
     [Header("Room Search")]
     public TMP_InputField searchRoomInput;
 
+    [Header("Input Limit")]
+    public int maxRoomNameLength = 8;
+
     private string currentSearchKeyword = "";
     private readonly Dictionary<string, RoomInfo> cachedRoomList = new Dictionary<string, RoomInfo>();
 
@@ -86,6 +89,12 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
 
         if (createRoomPopup != null) createRoomPopup.SetActive(false);
         if (joinRoomPopup != null) joinRoomPopup.SetActive(false);
+
+        // 방 제목 입력창 자체에서 글자 수 제한
+        if (createRoomNameInput != null)
+        {
+            createRoomNameInput.characterLimit = maxRoomNameLength;
+        }
 
         SetStatus("멀티 로비 초기화 중...");
 
@@ -326,6 +335,7 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         if (createRoomNameInput != null)
         {
             createRoomNameInput.text = "";
+            createRoomNameInput.characterLimit = maxRoomNameLength;
         }
 
         if (passwordInput != null)
@@ -576,125 +586,4 @@ public class PhotonLobbyManager : MonoBehaviourPunCallbacks
         RefreshStatusText();
         */
     }
-
-    /*
-    // -----------------------------
-    // Photon Debug Status
-    // 문제 진단 필요 시 이 영역과 using System.Text, Debug 필드, Update()를 다시 활성화.
-    // -----------------------------
-    private void RefreshStatusText()
-    {
-        if (statusText == null)
-            return;
-
-        if (!showPhotonDebugStatus)
-        {
-            statusText.text = lastStatusMessage;
-            return;
-        }
-
-        statusText.text = BuildPhotonDebugStatus();
-    }
-
-    private string BuildPhotonDebugStatus()
-    {
-        StringBuilder sb = new StringBuilder();
-
-        sb.AppendLine($"상태: {lastStatusMessage}");
-        sb.AppendLine();
-
-        sb.AppendLine("[Photon 진단]");
-        sb.AppendLine($"NickName: {PhotonNetwork.NickName}");
-        sb.AppendLine($"GameVersion: {PhotonNetwork.GameVersion}");
-        sb.AppendLine($"AppVersion: {PhotonNetwork.AppVersion}");
-        sb.AppendLine($"CloudRegion: {SafeString(PhotonNetwork.CloudRegion)}");
-        sb.AppendLine($"Server: {PhotonNetwork.Server}");
-        sb.AppendLine($"ClientState: {PhotonNetwork.NetworkClientState}");
-        sb.AppendLine($"IsConnected: {PhotonNetwork.IsConnected}");
-        sb.AppendLine($"IsConnectedAndReady: {PhotonNetwork.IsConnectedAndReady}");
-        sb.AppendLine($"InLobby: {PhotonNetwork.InLobby}");
-        sb.AppendLine($"InRoom: {PhotonNetwork.InRoom}");
-        sb.AppendLine($"Ping: {PhotonNetwork.GetPing()} ms");
-        sb.AppendLine($"CountOfRooms: {PhotonNetwork.CountOfRooms}");
-        sb.AppendLine($"CountOfPlayers: {PhotonNetwork.CountOfPlayers}");
-        sb.AppendLine($"CountOfPlayersOnMaster: {PhotonNetwork.CountOfPlayersOnMaster}");
-        sb.AppendLine($"CountOfPlayersInRooms: {PhotonNetwork.CountOfPlayersInRooms}");
-
-        if (PhotonNetwork.CurrentLobby != null)
-        {
-            sb.AppendLine($"LobbyName: {SafeString(PhotonNetwork.CurrentLobby.Name)}");
-            sb.AppendLine($"LobbyType: {PhotonNetwork.CurrentLobby.Type}");
-        }
-        else
-        {
-            sb.AppendLine("Lobby: null");
-        }
-
-        if (PhotonNetwork.CurrentRoom != null)
-        {
-            sb.AppendLine($"CurrentRoom: {PhotonNetwork.CurrentRoom.Name}");
-            sb.AppendLine($"Room Open/Visible: {PhotonNetwork.CurrentRoom.IsOpen}/{PhotonNetwork.CurrentRoom.IsVisible}");
-            sb.AppendLine($"Room Players: {PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.MaxPlayers}");
-        }
-        else
-        {
-            sb.AppendLine("CurrentRoom: null");
-        }
-
-        AppSettings appSettings = PhotonNetwork.PhotonServerSettings != null
-            ? PhotonNetwork.PhotonServerSettings.AppSettings
-            : null;
-
-        if (appSettings != null)
-        {
-            sb.AppendLine();
-            sb.AppendLine("[Photon 설정]");
-            sb.AppendLine($"FixedRegion: {SafeString(appSettings.FixedRegion)}");
-            sb.AppendLine($"Protocol: {appSettings.Protocol}");
-            sb.AppendLine($"UseNameServer: {appSettings.UseNameServer}");
-            sb.AppendLine($"Server: {SafeString(appSettings.Server)}");
-            sb.AppendLine($"Port: {appSettings.Port}");
-            sb.AppendLine($"AppIdRealtime 앞 8자리: {MaskAppId(appSettings.AppIdRealtime)}");
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("[방 목록 진단]");
-        sb.AppendLine($"RoomListUpdate 받은 횟수: {totalRoomListUpdateCount}");
-        sb.AppendLine($"마지막 RoomListUpdate 개수: {lastReceivedRoomListCount}");
-        sb.AppendLine($"캐시된 방 개수: {cachedRoomList.Count}");
-        sb.AppendLine($"검색어: '{currentSearchKeyword}'");
-
-        sb.AppendLine();
-        sb.AppendLine("[최근 오류]");
-        sb.AppendLine($"DisconnectCause: {lastDisconnectCause}");
-        sb.AppendLine($"CreateRoomFailed: {lastCreateRoomFail}");
-        sb.AppendLine($"JoinRoomFailed: {lastJoinRoomFail}");
-
-        sb.AppendLine();
-        sb.AppendLine("[최근 방]");
-        sb.AppendLine($"LastCreatedRoom: {lastCreatedRoomName}");
-        sb.AppendLine($"LastJoinedRoom: {lastJoinedRoomName}");
-
-        return sb.ToString();
-    }
-
-    private string SafeString(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return "(empty)";
-
-        return value;
-    }
-
-    private string MaskAppId(string appId)
-    {
-        if (string.IsNullOrEmpty(appId))
-            return "(empty)";
-
-        if (appId.Length <= 8)
-            return appId;
-
-        return appId.Substring(0, 8) + "...";
-    }
-    */
 }

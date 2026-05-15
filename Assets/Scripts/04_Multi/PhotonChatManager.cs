@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -5,9 +6,13 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine.UI;
 
-// 멀티 게임 씬에서 현재 방 제목을 표시하고, 같은 Photon 방에 있는 플레이어끼리 실시간 채팅을 주고받는 스크립트
-// Enter 키로 채팅 입력창을 활성화할 수 있으며, 입력창 포커스 상태에서는 Enter 입력 또는 전송 버튼 클릭으로 채팅을 전송한다.
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
+// 멀티 게임 씬에서 현재 방 제목을 표시하고,
+// 같은 Photon 방에 있는 플레이어끼리 실시간 채팅을 주고받는 스크립트
+// 추가 기능:
+// 1. 플레이어 입장 시 전적 표시
+// 2. 새로 들어온 플레이어도 기존 플레이어 전적을 볼 수 있도록 Player CustomProperties 사용
 public class PhotonChatManager : MonoBehaviourPunCallbacks
 {
     public static PhotonChatManager Instance;
@@ -23,6 +28,11 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
 
     [Header("Option")]
     public int maxChatCount = 100;
+
+    private const string PROP_RECORD_TEXT = "recordText";
+
+    // 같은 플레이어 전적이 채팅창에 중복 출력되는 것 방지
+    private readonly HashSet<int> announcedRecordActors = new HashSet<int>();
 
     private void Awake()
     {
@@ -49,6 +59,12 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
             }
 
             AddChatSystemMessage($"방 입장 확인: {PhotonNetwork.CurrentRoom.Name}");
+
+            // 내 전적을 Photon Player CustomProperties에 등록
+            UpdateMyRecordProperty();
+
+            // 이미 방에 있던 플레이어들의 전적도 출력
+            Invoke(nameof(PrintAllPlayerRecords), 0.5f);
         }
         else
         {
@@ -68,6 +84,11 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
             chatInput.onSubmit.RemoveListener(OnSubmitChat);
             chatInput.onEndEdit.RemoveListener(OnEndEditChat);
         }
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void Update()
@@ -86,7 +107,6 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
 
     private void OnSubmitChat(string _)
     {
-        // 포커스 상태에서 제출되면 전송
         SendChatFromInput();
     }
 
@@ -95,7 +115,6 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
         if (chatInput == null)
             return;
 
-        // Enter로 EndEdit된 경우 전송
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             SendChatFromInput();
@@ -105,11 +124,34 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
     public override void OnPlayerEnteredRoom(Player newPlayer)
     {
         AddChatSystemMessage($"{newPlayer.NickName}님이 입장했습니다.");
+
+        // 기존 방에 있던 사람은 자신의 전적 정보를 다시 CustomProperties에 올림
+        // 새로 들어온 사람도 기존 사람의 전적을 볼 수 있게 하기 위함
+        UpdateMyRecordProperty();
+
+        // 혹시 이미 전달된 정보가 있으면 출력 시도
+        Invoke(nameof(PrintAllPlayerRecords), 0.5f);
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer)
     {
         AddChatSystemMessage($"{otherPlayer.NickName}님이 퇴장했습니다.");
+
+        if (announcedRecordActors.Contains(otherPlayer.ActorNumber))
+        {
+            announcedRecordActors.Remove(otherPlayer.ActorNumber);
+        }
+    }
+
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+    {
+        if (changedProps == null)
+            return;
+
+        if (!changedProps.ContainsKey(PROP_RECORD_TEXT))
+            return;
+
+        PrintPlayerRecord(targetPlayer);
     }
 
     public void OnClickSendChat()
@@ -157,6 +199,51 @@ public class PhotonChatManager : MonoBehaviourPunCallbacks
         }
 
         photonView.RPC(nameof(RPC_ReceiveSystemMessage), RpcTarget.All, message);
+    }
+
+    private void UpdateMyRecordProperty()
+    {
+        if (!PhotonNetwork.InRoom)
+            return;
+
+        string recordText = PlayerDataService.GetMyRecordText();
+
+        Hashtable props = new Hashtable();
+        props[PROP_RECORD_TEXT] = recordText;
+
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+    }
+
+    private void PrintAllPlayerRecords()
+    {
+        if (!PhotonNetwork.InRoom)
+            return;
+
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            PrintPlayerRecord(player);
+        }
+    }
+
+    private void PrintPlayerRecord(Player player)
+    {
+        if (player == null)
+            return;
+
+        if (announcedRecordActors.Contains(player.ActorNumber))
+            return;
+
+        if (player.CustomProperties == null)
+            return;
+
+        if (!player.CustomProperties.ContainsKey(PROP_RECORD_TEXT))
+            return;
+
+        string recordText = player.CustomProperties[PROP_RECORD_TEXT].ToString();
+
+        AddChatSystemMessage($"{player.NickName} 전적: {recordText}");
+
+        announcedRecordActors.Add(player.ActorNumber);
     }
 
     [PunRPC]

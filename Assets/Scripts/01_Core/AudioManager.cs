@@ -16,6 +16,9 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
 
+    private const string BGM_KEY = "BGM_VOLUME";
+    private const string SFX_KEY = "SFX_VOLUME";
+
     [Header("Mixer")]
     public AudioMixer mixer;
 
@@ -58,6 +61,22 @@ public class AudioManager : MonoBehaviour
         nextBGM = bgmSourceB;
 
         InitPool();
+
+        LoadVolume();
+    }
+
+    void Start()
+    {
+        LoadVolume();
+    }
+
+    private void LoadVolume()
+    {
+        float bgmVol = PlayerPrefs.GetFloat(BGM_KEY, 0.5f);
+        float sfxVol = PlayerPrefs.GetFloat(SFX_KEY, 0.5f);
+
+        SetBGMVolume(bgmVol);
+        SetSFXVolume(sfxVol);
     }
 
     // =========================================================
@@ -218,6 +237,8 @@ public class AudioManager : MonoBehaviour
         value = Mathf.Clamp(value, 0.0001f, 1f);
 
         mixer.SetFloat("BGMVolume", Mathf.Log10(value) * 20);
+
+        PlayerPrefs.SetFloat(BGM_KEY, value);
     }
 
     public void SetSFXVolume(float value)
@@ -225,7 +246,12 @@ public class AudioManager : MonoBehaviour
         value = Mathf.Clamp(value, 0.0001f, 1f);
 
         mixer.SetFloat("SFXVolume", Mathf.Log10(value) * 20);
+
+        PlayerPrefs.SetFloat(SFX_KEY, value);
     }
+
+    public float GetBGMVolume() => PlayerPrefs.GetFloat(BGM_KEY, 0.5f);
+    public float GetSFXVolume() => PlayerPrefs.GetFloat(SFX_KEY, 0.5f);
 
     // =========================================================
     // DEFAULT SFX HELPERS
