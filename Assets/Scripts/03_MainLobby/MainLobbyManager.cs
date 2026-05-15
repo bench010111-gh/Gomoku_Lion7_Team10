@@ -19,36 +19,67 @@ public class MainLobbyManager : MonoBehaviour
     [Header("Logout Popup")]
     public GameObject logoutPopupPanel;
 
+    [Header("Setting Popup")]
+    public GameObject settingPopupPanel;
+
+    [Header("AI Setting Popup")]
+    public GameObject aiSettingPopup; 
+
     void Start()
     {
         if (nicknameText != null && UserSession.Instance != null)
         {
-            nicknameText.text = $"닉네임: {UserSession.Instance.nickname}";
+            nicknameText.text = $"회원명: {UserSession.Instance.nickname}";
         }
 
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(false);
         }
+
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(false);
+        }
+
+        if(aiSettingPopup != null)
+        {
+            aiSettingPopup.SetActive(false); 
+        }
     }
 
     public void OnClickSingleMode()
     {
-        SceneManager.LoadScene(singleLobbyScene);
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        Debug.Log("OnClickSingleMode");
+        aiSettingPopup.SetActive(true); 
+        // SceneManager.LoadScene(singleLobbyScene);
     }
 
     public void OnClickMultiMode()
     {
-        SceneManager.LoadScene(multiLobbyScene);
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        SceneTransitionManager.Instance.ChangeScene(multiLobbyScene);
+        //SceneManager.LoadScene(multiLobbyScene);
     }
 
     public void OnClickDuoMode()
     {
-        SceneManager.LoadScene(duoLobbyScene);
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        SceneTransitionManager.Instance.ChangeScene(duoLobbyScene);
     }
 
     public void OnClickBack()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(true);
@@ -57,11 +88,14 @@ public class MainLobbyManager : MonoBehaviour
 
     public void OnClickLogoutYes()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         var bro = Backend.BMember.Logout();
 
         if (bro.IsSuccess())
         {
-            Debug.Log("로그아웃 성공");
+            Debug.Log("접속종료 성공");
 
             if (UserSession.Instance != null)
             {
@@ -69,19 +103,45 @@ public class MainLobbyManager : MonoBehaviour
                 UserSession.Instance.nickname = "";
             }
 
-            SceneManager.LoadScene(loginScene);
+            SceneTransitionManager.Instance.ChangeScene(loginScene);
+           // SceneManager.LoadScene(loginScene);
         }
         else
         {
-            Debug.LogError("로그아웃 실패: " + bro);
+            Debug.LogError("접속종료 실패: " + bro);
         }
     }
 
     public void OnClickLogoutNo()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         if (logoutPopupPanel != null)
         {
             logoutPopupPanel.SetActive(false);
+        }
+    }
+
+    public void OnClickSetting()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(true);
+        }
+    }
+
+    public void OnClickCloseSetting()
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
+        if (settingPopupPanel != null)
+        {
+            settingPopupPanel.SetActive(false);
         }
     }
 }

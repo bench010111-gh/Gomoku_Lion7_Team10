@@ -1,19 +1,22 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using ExitGames.Client.Photon;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
 using UnityEngine;
 
+using Hashtable = ExitGames.Client.Photon.Hashtable;
+
 // 멀티 게임 씬에서 색상 배정, 준비/시작, 턴 관리,
-// GomokuRule 기반 착수 규칙 검사, 금수 표시, 승패/무승부 처리를 담당하는 스크립트
+// GomokuRule 기반 착수 규칙 검사, 금수 표시, 승패/무승부/기권/퇴장/시간초과 처리,
+// 전적 저장 및 복기용 기보 저장을 담당하는 스크립트
 public class MultiGameManager : MonoBehaviourPunCallbacks
 {
     [Header("Board")]
     public Transform boardRoot;
-    public Vector2 boardOrigin = Vector2.zero;   // 좌하단 첫 교차점 기준
-    public float cellSize = 1f;                  // 교차점 간격
+    public Vector2 boardOrigin = Vector2.zero;
+    public float cellSize = 1f;
 
     [Header("Stone Prefabs")]
     public GameObject blackStonePrefab;
@@ -24,9 +27,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     public TMP_Text turnText;
     public TMP_Text statusText;
 
+    [Header("Turn Timer")]
+    public int turnDurationSeconds = 30;
+
     [Header("Forbidden Mark")]
-    public GameObject forbiddenMarkPrefab;       // X 표시 프리팹
-    public Transform forbiddenMarkRoot;          // X 표시 부모 오브젝트
+    public GameObject forbiddenMarkPrefab;
+    public Transform forbiddenMarkRoot;
     public bool showForbiddenOnlyToBlackPlayer = true;
 
     [Header("Result Popup")]
@@ -38,6 +44,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     private GomokuRule gomokuRule = new GomokuRule(BoardData.Size);
 
     private readonly List<GameObject> forbiddenMarks = new List<GameObject>();
+    private readonly List<OmokMoveRecord> moveRecords = new List<OmokMoveRecord>();
+
+    private bool hasSavedCurrentMatchResult = false;
+    private bool isLeavingAfterLoss = false;
+    private bool hasHandledTurnTimeout = false;
 
     private const string PROP_BLACK_ACTOR = "blackActor";
     private const string PROP_WHITE_ACTOR = "whiteActor";
@@ -45,10 +56,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     private const string PROP_WHITE_START = "whiteStart";
     private const string PROP_GAME_STARTED = "gameStarted";
     private const string PROP_CURRENT_TURN = "currentTurn";
+    private const string PROP_TURN_START_TIME = "turnStartTime";
 
     private void Start()
     {
         boardData.ClearBoard();
+        moveRecords.Clear();
+        hasSavedCurrentMatchResult = false;
+        isLeavingAfterLoss = false;
+        hasHandledTurnTimeout = false;
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -62,13 +78,63 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     private void Update()
     {
+        UpdateTurnTimerUI();
+
         if (!IsGameStarted())
             return;
+
+        CheckTurnTimeout();
 
         if (!Input.GetMouseButtonDown(0))
             return;
 
         TryClickBoard();
+    }
+
+    // -----------------------------
+    // Public methods for leave handling
+    // -----------------------------
+    public bool IsPlayingAsPlayer()
+    {
+        return IsGameStarted() && GetMyStone() != StoneType.Empty;
+    }
+
+    public void RequestLeaveRoomAsLoss()
+    {
+        if (isLeavingAfterLoss)
+            return;
+
+        isLeavingAfterLoss = true;
+
+        if (!PhotonNetwork.InRoom)
+            return;
+
+        if (!IsPlayingAsPlayer())
+        {
+            PhotonNetwork.LeaveRoom();
+            return;
+        }
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            HandleResignAsMaster(PhotonNetwork.LocalPlayer.ActorNumber);
+        }
+        else
+        {
+            photonView.RPC(nameof(RPC_RequestResign), RpcTarget.MasterClient, PhotonNetwork.LocalPlayer.ActorNumber);
+        }
+
+        StartCoroutine(LeaveRoomAfterResultSaved());
+    }
+
+    private IEnumerator LeaveRoomAfterResultSaved()
+    {
+        yield return new WaitForSeconds(1.0f);
+
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.LeaveRoom();
+        }
     }
 
     // -----------------------------
@@ -116,6 +182,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             changed = true;
         }
 
+        if (!PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(PROP_TURN_START_TIME))
+        {
+            props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
+            changed = true;
+        }
+
         if (changed)
         {
             PhotonNetwork.CurrentRoom.SetCustomProperties(props);
@@ -156,7 +228,28 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     {
         if (PhotonNetwork.IsMasterClient)
         {
-            ResetRoomAfterPlayerLeft();
+            bool gameWasStarted = IsGameStarted();
+            StoneType leftStone = GetStoneByActor(otherPlayer.ActorNumber);
+
+            if (gameWasStarted && leftStone != StoneType.Empty)
+            {
+                StoneType winner = leftStone == StoneType.Black ? StoneType.White : StoneType.Black;
+                string leftStoneText = leftStone == StoneType.Black ? "흑" : "백";
+
+                if (PhotonChatManager.Instance != null)
+                {
+                    PhotonChatManager.Instance.BroadcastSystemMessage(
+                        $"{otherPlayer.NickName} ({leftStoneText}) 님이 방을 나갔습니다. 상대 승리로 처리됩니다."
+                    );
+                }
+
+                HandleGameOverAsMaster(winner, false, true, otherPlayer.NickName, false);
+                ResetRoomAfterPlayerLeft(false);
+            }
+            else
+            {
+                ResetRoomAfterPlayerLeft(true);
+            }
         }
 
         UpdateUI();
@@ -165,8 +258,120 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
+        if (propertiesThatChanged.ContainsKey(PROP_CURRENT_TURN) ||
+            propertiesThatChanged.ContainsKey(PROP_TURN_START_TIME))
+        {
+            hasHandledTurnTimeout = false;
+        }
+
         UpdateUI();
         RefreshForbiddenMarks();
+    }
+
+    // -----------------------------
+    // Turn Timer
+    // -----------------------------
+    private void StartTurnTimerOnMaster()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
+        Hashtable props = new Hashtable();
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+        hasHandledTurnTimeout = false;
+    }
+
+    private double GetTurnStartTime()
+    {
+        if (PhotonNetwork.CurrentRoom == null)
+            return PhotonNetwork.Time;
+
+        if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(PROP_TURN_START_TIME))
+            return Convert.ToDouble(PhotonNetwork.CurrentRoom.CustomProperties[PROP_TURN_START_TIME]);
+
+        return PhotonNetwork.Time;
+    }
+
+    private int GetRemainingTurnSeconds()
+    {
+        if (!IsGameStarted())
+            return turnDurationSeconds;
+
+        double elapsed = PhotonNetwork.Time - GetTurnStartTime();
+        int remaining = Mathf.CeilToInt((float)(turnDurationSeconds - elapsed));
+
+        return Mathf.Clamp(remaining, 0, turnDurationSeconds);
+    }
+
+    private void UpdateTurnTimerUI()
+    {
+        if (turnText == null)
+            return;
+
+        StoneType turn = GetCurrentTurn();
+
+        if (!IsGameStarted())
+        {
+            turnText.text = $"현재 차례 : {(turn == StoneType.Black ? "흑" : "백")}";
+            return;
+        }
+
+        int remaining = GetRemainingTurnSeconds();
+        turnText.text = $"현재 차례 : {(turn == StoneType.Black ? "흑" : "백")} {remaining}초";
+    }
+
+    private void CheckTurnTimeout()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
+        if (hasHandledTurnTimeout)
+            return;
+
+        if (!IsGameStarted())
+            return;
+
+        int remaining = GetRemainingTurnSeconds();
+
+        if (remaining > 0)
+            return;
+
+        hasHandledTurnTimeout = true;
+        HandleTurnTimeoutAsMaster();
+    }
+
+    private void HandleTurnTimeoutAsMaster()
+    {
+        StoneType timeoutStone = GetCurrentTurn();
+
+        if (timeoutStone == StoneType.Empty)
+            return;
+
+        StoneType winner = timeoutStone == StoneType.Black ? StoneType.White : StoneType.Black;
+        string timeoutStoneText = timeoutStone == StoneType.Black ? "흑" : "백";
+        string timeoutPlayerName = GetPlayerNameByStone(timeoutStone);
+
+        if (PhotonChatManager.Instance != null)
+        {
+            PhotonChatManager.Instance.BroadcastSystemMessage(
+                $"{timeoutPlayerName} ({timeoutStoneText}) 님의 시간이 초과되었습니다."
+            );
+        }
+
+        HandleGameOverAsMaster(winner, false, false, "", true);
+    }
+
+    private string GetPlayerNameByStone(StoneType stone)
+    {
+        if (stone == StoneType.Black)
+            return GetPlayerNameByActor(GetBlackActor());
+
+        if (stone == StoneType.White)
+            return GetPlayerNameByActor(GetWhiteActor());
+
+        return "알 수 없음";
     }
 
     // -----------------------------
@@ -174,6 +379,8 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     // -----------------------------
     public void OnClickSwapStone()
     {
+        PlayClickSound();
+
         if (!PhotonNetwork.IsMasterClient)
         {
             SetStatus("방장만 색상을 바꿀 수 있습니다.");
@@ -200,6 +407,8 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     public void OnClickReady()
     {
+        PlayClickSound();
+
         if (GetMyStone() != StoneType.Black)
         {
             SetStatus("흑돌만 준비 버튼을 누를 수 있습니다.");
@@ -219,6 +428,8 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     public void OnClickStartGame()
     {
+        PlayClickSound();
+
         if (GetMyStone() != StoneType.White)
         {
             SetStatus("백돌만 시작 버튼을 누를 수 있습니다.");
@@ -243,12 +454,17 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         props[PROP_WHITE_START] = true;
         props[PROP_GAME_STARTED] = true;
         props[PROP_CURRENT_TURN] = (int)StoneType.Black;
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+        hasHandledTurnTimeout = false;
     }
 
     public void OnClickResign()
     {
+        PlayClickSound();
+
         if (!IsGameStarted())
         {
             SetStatus("게임 진행 중일 때만 기권할 수 있습니다.");
@@ -267,6 +483,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
 
     public void OnClickCloseResultPopup()
     {
+        PlayClickSound();
         HideResultPopup();
     }
 
@@ -287,6 +504,12 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         if (currentTurn != myStone)
         {
             SetStatus("지금은 내 차례가 아닙니다.");
+            return;
+        }
+
+        if (Camera.main == null)
+        {
+            SetStatus("Main Camera가 없습니다.");
             return;
         }
 
@@ -359,19 +582,25 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         if (isWin)
         {
             Debug.Log("[승리판정] 승리 감지됨. 결과 팝업 RPC 호출");
-            HandleGameOverAsMaster(requestedStone, false);
+            HandleGameOverAsMaster(requestedStone, false, false);
             return;
         }
 
         if (gomokuRule.IsDraw(boardData.GetPlacedStoneCount()))
         {
-            HandleGameOverAsMaster(StoneType.Empty, true);
+            HandleGameOverAsMaster(StoneType.Empty, true, false);
             return;
         }
 
+        StoneType nextTurn = requestedStone == StoneType.Black ? StoneType.White : StoneType.Black;
+
         Hashtable props = new Hashtable();
-        props[PROP_CURRENT_TURN] = (int)(requestedStone == StoneType.Black ? StoneType.White : StoneType.Black);
+        props[PROP_CURRENT_TURN] = (int)nextTurn;
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
+
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+
+        hasHandledTurnTimeout = false;
     }
 
     private bool CanPlaceStoneByGomokuRule(int x, int y, StoneType currentTurn, StoneType requestedStone, out string failReason)
@@ -473,16 +702,27 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             PhotonChatManager.Instance.BroadcastSystemMessage($"{playerName} ({stoneText}) 님이 기권했습니다.");
         }
 
-        HandleGameOverAsMaster(winner, false);
+        HandleGameOverAsMaster(winner, false, true);
     }
 
-    private void HandleGameOverAsMaster(StoneType winner, bool isDraw)
+    private void HandleGameOverAsMaster(
+        StoneType winner,
+        bool isDraw,
+        bool isResign = false,
+        string opponentNicknameOverride = "",
+        bool isTimeout = false
+    )
     {
         string resultMessage;
 
         if (isDraw)
         {
             resultMessage = "무승부입니다.";
+        }
+        else if (isTimeout)
+        {
+            string winnerText = winner == StoneType.Black ? "흑" : "백";
+            resultMessage = $"시간 초과. {winnerText}돌이 승리했습니다.";
         }
         else
         {
@@ -495,23 +735,42 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             PhotonChatManager.Instance.BroadcastSystemMessage(resultMessage);
         }
 
-        Debug.Log($"[게임종료] winner={winner}, isDraw={isDraw}, resultMessage={resultMessage}");
+        string matchId = Guid.NewGuid().ToString("N");
 
-        photonView.RPC(nameof(RPC_ShowGameResult), RpcTarget.All, (int)winner, isDraw);
+        Debug.Log($"[게임종료] winner={winner}, isDraw={isDraw}, isResign={isResign}, isTimeout={isTimeout}, matchId={matchId}");
+
+        photonView.RPC(
+            nameof(RPC_ShowGameResult),
+            RpcTarget.All,
+            (int)winner,
+            isDraw,
+            isResign,
+            matchId,
+            opponentNicknameOverride,
+            isTimeout
+        );
 
         Hashtable props = new Hashtable();
         props[PROP_BLACK_READY] = false;
         props[PROP_WHITE_START] = false;
         props[PROP_GAME_STARTED] = false;
         props[PROP_CURRENT_TURN] = (int)StoneType.Black;
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
     }
 
     [PunRPC]
-    private void RPC_ShowGameResult(int winnerValue, bool isDraw)
+    private void RPC_ShowGameResult(
+        int winnerValue,
+        bool isDraw,
+        bool isResign,
+        string matchId,
+        string opponentNicknameOverride,
+        bool isTimeout
+    )
     {
-        Debug.Log($"[결과팝업 RPC] 호출됨 winnerValue={winnerValue}, isDraw={isDraw}");
+        Debug.Log($"[결과팝업 RPC] 호출됨 winnerValue={winnerValue}, isDraw={isDraw}, isResign={isResign}, isTimeout={isTimeout}, matchId={matchId}");
 
         StoneType winner = (StoneType)winnerValue;
 
@@ -525,6 +784,27 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             title = "무승부";
             message = "보드가 가득 차서 무승부입니다.";
         }
+        else if (isTimeout)
+        {
+            StoneType myStone = GetMyStone();
+
+            if (myStone == winner)
+            {
+                title = "승리";
+                message = "상대의 시간이 초과되어 승리했습니다!";
+            }
+            else if (myStone == StoneType.Empty)
+            {
+                string winnerText = winner == StoneType.Black ? "흑" : "백";
+                title = "게임 종료";
+                message = $"시간 초과로 {winnerText}돌이 승리했습니다.";
+            }
+            else
+            {
+                title = "패배";
+                message = "시간 초과로 패배했습니다.";
+            }
+        }
         else
         {
             StoneType myStone = GetMyStone();
@@ -533,7 +813,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             if (myStone == winner)
             {
                 title = "승리";
-                message = "승리했습니다!";
+                message = isResign ? "상대가 기권/퇴장하여 승리했습니다!" : "승리했습니다!";
             }
             else if (myStone == StoneType.Empty)
             {
@@ -543,12 +823,133 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
             else
             {
                 title = "패배";
-                message = "패배했습니다.";
+                message = isResign ? "기권/퇴장으로 패배했습니다." : "패배했습니다.";
             }
         }
 
+        SaveResultAndReplay(matchId, winner, isDraw, isResign, opponentNicknameOverride);
+
+        PlayResultSound(winner, isDraw);
+
         ShowResultPopup(title, message);
         SetStatus(message);
+    }
+
+    private void PlayResultSound(StoneType winner, bool isDraw)
+    {
+        if (AudioManager.Instance == null)
+            return;
+
+        if (isDraw)
+        {
+            AudioManager.Instance.PlayPopupSound();
+            return;
+        }
+
+        StoneType myStone = GetMyStone();
+
+        if (myStone == winner)
+        {
+            AudioManager.Instance.PlayWinSound();
+        }
+        else if (myStone == StoneType.Empty)
+        {
+            AudioManager.Instance.PlayPopupSound();
+        }
+        else
+        {
+            AudioManager.Instance.PlayLossSound();
+        }
+    }
+
+    private void SaveResultAndReplay(
+        string matchId,
+        StoneType winner,
+        bool isDraw,
+        bool isResign,
+        string opponentNicknameOverride = ""
+    )
+    {
+        if (hasSavedCurrentMatchResult)
+            return;
+
+        hasSavedCurrentMatchResult = true;
+
+        StoneType myStone = GetMyStone();
+
+        if (myStone == StoneType.Empty)
+            return;
+
+        string myNickname = PhotonNetwork.NickName;
+
+        string opponentNickname = string.IsNullOrEmpty(opponentNicknameOverride)
+            ? GetOpponentNickname()
+            : opponentNicknameOverride;
+
+        bool isWin = !isDraw && myStone == winner;
+        bool isLose = !isDraw && myStone != winner;
+
+        string result;
+
+        if (isDraw)
+            result = "Draw";
+        else if (isWin)
+            result = "Win";
+        else
+            result = "Lose";
+
+        string myStoneText = myStone == StoneType.Black ? "Black" : "White";
+
+        string winnerStoneText;
+
+        if (isDraw)
+            winnerStoneText = "None";
+        else
+            winnerStoneText = winner == StoneType.Black ? "Black" : "White";
+
+        OmokMoveRecordList moveList = new OmokMoveRecordList();
+        moveList.moves = new List<OmokMoveRecord>(moveRecords);
+
+        string movesJson = JsonUtility.ToJson(moveList);
+
+        bool recordUpdated = PlayerDataService.ApplyMatchResult(
+            myNickname,
+            isWin,
+            isLose,
+            isDraw
+        );
+
+        bool historySaved = PlayerDataService.SaveMatchHistory(
+            matchId,
+            PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "UnknownRoom",
+            myNickname,
+            opponentNickname,
+            myStoneText,
+            result,
+            winnerStoneText,
+            isDraw,
+            isResign,
+            movesJson
+        );
+
+        Debug.Log($"[결과 저장] 전적 저장={recordUpdated}, 기보 저장={historySaved}, result={result}, moves={moveRecords.Count}");
+    }
+
+    private string GetOpponentNickname()
+    {
+        StoneType myStone = GetMyStone();
+
+        int opponentActor = -1;
+
+        if (myStone == StoneType.Black)
+            opponentActor = GetWhiteActor();
+        else if (myStone == StoneType.White)
+            opponentActor = GetBlackActor();
+
+        if (opponentActor == -1)
+            return "알 수 없음";
+
+        return GetPlayerNameByActor(opponentActor);
     }
 
     private void ShowResultPopup(string title, string message)
@@ -574,7 +975,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     // -----------------------------
     // Reset
     // -----------------------------
-    private void ResetRoomAfterPlayerLeft()
+    private void ResetRoomAfterPlayerLeft(bool clearBoard)
     {
         int playerCount = PhotonNetwork.PlayerList.Length;
 
@@ -583,6 +984,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         props[PROP_WHITE_START] = false;
         props[PROP_GAME_STARTED] = false;
         props[PROP_CURRENT_TURN] = (int)StoneType.Black;
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
 
         if (playerCount == 1)
         {
@@ -602,7 +1004,11 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
-        photonView.RPC(nameof(RPC_ClearBoardVisuals), RpcTarget.All);
+
+        if (clearBoard)
+        {
+            photonView.RPC(nameof(RPC_ClearBoardVisuals), RpcTarget.All);
+        }
     }
 
     private void ResetMatchStateOnMaster(bool clearBoard)
@@ -612,6 +1018,7 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         props[PROP_WHITE_START] = false;
         props[PROP_GAME_STARTED] = false;
         props[PROP_CURRENT_TURN] = (int)StoneType.Black;
+        props[PROP_TURN_START_TIME] = PhotonNetwork.Time;
 
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
 
@@ -630,15 +1037,48 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         StoneType stone = (StoneType)stoneValue;
 
         boardData.SetCell(x, y, stone);
+
+        moveRecords.Add(new OmokMoveRecord
+        {
+            turnIndex = moveRecords.Count + 1,
+            x = x,
+            y = y,
+            stone = stoneValue
+        });
+
         SpawnStoneVisual(x, y, stone);
+
+        PlayStoneSound();
+
         UpdateUI();
         RefreshForbiddenMarks();
+    }
+
+    private void PlayStoneSound()
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayStoneSound();
+        }
+    }
+
+    private void PlayClickSound()
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayClickSound();
+        }
     }
 
     [PunRPC]
     private void RPC_ClearBoardVisuals()
     {
         boardData.ClearBoard();
+        moveRecords.Clear();
+        hasSavedCurrentMatchResult = false;
+        isLeavingAfterLoss = false;
+        hasHandledTurnTimeout = false;
+
         ClearForbiddenMarks();
         HideResultPopup();
 
@@ -811,7 +1251,6 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
     private void UpdateUI()
     {
         StoneType myStone = GetMyStone();
-        StoneType turn = GetCurrentTurn();
 
         if (myStoneText != null)
         {
@@ -823,13 +1262,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
                 myStoneText.text = "내 돌: 없음";
         }
 
-        if (turnText != null)
-        {
-            turnText.text = $"현재 턴: {(turn == StoneType.Black ? "흑" : "백")}";
-        }
-
         if (!IsGameStarted())
         {
+            StoneType turn = GetCurrentTurn();
+
+            if (turnText != null)
+            {
+                turnText.text = $"현재 차례 : {(turn == StoneType.Black ? "흑" : "백")}";
+            }
+
             if (GetBlackReady() && !GetWhiteStart())
                 SetStatus("흑 준비 완료. 백이 시작 버튼을 눌러야 합니다.");
             else if (!GetBlackReady())
@@ -839,7 +1280,15 @@ public class MultiGameManager : MonoBehaviourPunCallbacks
         }
         else
         {
-            SetStatus($"게임 진행 중 - {(turn == StoneType.Black ? "흑" : "백")} 차례");
+            StoneType turn = GetCurrentTurn();
+            int remaining = GetRemainingTurnSeconds();
+
+            if (turnText != null)
+            {
+                turnText.text = $"현재 차례 : {(turn == StoneType.Black ? "흑" : "백")} {remaining}초";
+            }
+
+            SetStatus($"게임 진행 중");
         }
     }
 

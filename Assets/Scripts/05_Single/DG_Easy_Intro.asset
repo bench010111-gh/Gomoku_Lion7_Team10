@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6870e667035f39b4a9cbc2c44898579b, type: 3}
+  m_Name: DG_Easy_Intro
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  lines:
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\u266A\uC5B4\uAC90 \uC5D4 \uC5B4\uAC90 \uC5D4 \uC5B4\uAC90 \uC5D4
+      \uC5B4\uAC90\u266A\r\n\u266A\uC774\uB807\uAC8C \uC65C \uB0B4\uAC00 \uB610?
+      \uB108\uC758 \uC9D1 \uC55E\uC5D0 \uB610\u266A"
+    speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\u266A\uC11C\uC788\uB294 \uAC74\uC9C0(?) \uB300\uCCB4 \uB09C \uBC14\uBCF8\uC9C0?\u266A"
+    speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}
+  - speakerName: "(\uD68C\uC6D0\uB2D8)"
+    dialogueText: '?'
+    speakerPortrait: {fileID: 617562206183986790, guid: 25cb75c6df166be49a842f459d1106f1, type: 3}
+  - speakerName: "(\uD68C\uC6D0\uB2D8)"
+    dialogueText: ...
+    speakerPortrait: {fileID: 617562206183986790, guid: 25cb75c6df166be49a842f459d1106f1, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\uC624\uBAA9\uC744 \uB450\uACE0 \uC2F6\uB2E4\uAD6C?"
+    speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\uB0B4\uAC00 \uC0B4\uC0B4\uD574\uC904\uAC8C, \uCEF4\uC628!"
+    speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "(\u266AAgain and again and again and again\u266A)\n(\u266A\uB108\uC5D0\uAC8C
+      \uC790\uAFB8 \uB3CC\uC544\uAC00\u266A)\r\n(\u266A\uC65C \uADF8\uB7F0\uC9C0
+      \uBAB0\uB77C? \uC65C \uADF8\uB7F0\uC9C0 \uBAB0\uB77C?\u266A)"
+    speakerPortrait: {fileID: -844697070918663814, guid: feaee0fe4639d634e94080a5eac4461a, type: 3}

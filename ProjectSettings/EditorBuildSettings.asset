@@ -23,14 +23,20 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/05_MultiLobbyScene.unity
     guid: 84bf4c8312a195d469aba2a0e0ac5c24
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/06_DuoLobbyScene.unity
     guid: c015d929bd2996d46a9224f9000ae373
   - enabled: 1
     path: Assets/Scenes/07_MultiGameScene.unity
     guid: 93f25df546330704994f4b036ba13957
   - enabled: 1
-    path: Assets/Scenes/08_DuoGameScene.unity
+    path: Assets/Scenes/06_DuoGameScene.unity
     guid: c8f3fba91d8f92b4f8fd46d89b83f144
+  - enabled: 1
+    path: Assets/Scenes/08_AIGameScene.unity
+    guid: 7c847d3c0980eb74eb5f0e5397e65533
+  - enabled: 1
+    path: Assets/Scenes/09_ReplayScene.unity
+    guid: eb8d49a0524294946a70cf46e91e9003
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

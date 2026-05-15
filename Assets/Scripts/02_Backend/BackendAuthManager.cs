@@ -1,11 +1,9 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using BackEnd;
-
-// 뒤끝 회원가입과 로그인을 처리하고, 로그인 성공 시 UserSession에 사용자 정보를 저장하는 스크립트
-// 최초 로그인한 유저의 전적 데이터(USER_DATA)가 없으면 기본 데이터를 생성한 뒤 메인 로비 씬으로 이동
-
+using System.Collections;
 
 public class BackendAuthManager : MonoBehaviour
 {
@@ -15,8 +13,76 @@ public class BackendAuthManager : MonoBehaviour
 
     private const string TableName = "USER_DATA";
 
+    IEnumerator Start()
+    {
+        yield return null;
+
+        EventSystem.current.SetSelectedGameObject(null);
+
+        yield return null;
+
+        FocusInput(idInput);
+    }
+
+    void FocusInput(TMP_InputField input)
+    {
+        input.Select();
+        input.ActivateInputField();
+
+        EventSystem.current.SetSelectedGameObject(input.gameObject);
+    }
+
+    void Update()
+    {
+        HandleTabNavigation();
+        HandleEnterKey();
+    }
+
+    // -------------------------
+    // Tab / Shift+Tab 이동 처리
+    // -------------------------
+    void HandleTabNavigation()
+    {
+        if (!Input.GetKeyDown(KeyCode.Tab)) return;
+
+        GameObject current = EventSystem.current.currentSelectedGameObject;
+        bool isShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+        if (!isShift)
+        {
+            if (current == idInput.gameObject)
+            {
+                FocusInput(pwInput);
+            }
+        }
+        else
+        {
+            if (current == pwInput.gameObject)
+            {
+                FocusInput(idInput);
+            }
+        }
+    }
+
+    // -------------------------
+    // Enter → 로그인
+    // -------------------------
+    void HandleEnterKey()
+    {
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            OnClickLogin();
+        }
+    }
+
+    // -------------------------
+    // 회원가입
+    // -------------------------
     public void OnClickSignUp()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         string id = idInput.text.Trim();
         string pw = pwInput.text.Trim();
 
@@ -38,8 +104,14 @@ public class BackendAuthManager : MonoBehaviour
         }
     }
 
+    // -------------------------
+    // 로그인
+    // -------------------------
     public void OnClickLogin()
     {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlayClickSound();
+
         string id = idInput.text.Trim();
         string pw = pwInput.text.Trim();
 
@@ -63,18 +135,26 @@ public class BackendAuthManager : MonoBehaviour
         UserSession.Instance.userId = id;
         UserSession.Instance.nickname = id;
 
-        // 닉네임도 일단 아이디로 설정
+        // 닉네임 설정
         Backend.BMember.UpdateNickname(id);
 
-        // 처음 유저인지 확인 후 기본 데이터 생성
+        // 유저 데이터 확인 및 생성
         EnsureUserDataExists(id);
 
-        SceneManager.LoadScene("03_MainLobbyScene");
+        SceneTransitionManager.Instance.ChangeScene("03_MainLobbyScene");
+        //SceneManager.LoadScene("03_MainLobbyScene");
     }
 
+    // -------------------------
+    // 유저 데이터 체크
+    // -------------------------
     private void EnsureUserDataExists(string nickname)
     {
-        var bro = Backend.PlayerData.GetMyData(TableName, new string[] { "nickname", "winCount", "loseCount", "drawCount" }, 1);
+        var bro = Backend.PlayerData.GetMyData(
+            TableName,
+            new string[] { "nickname", "winCount", "loseCount", "drawCount" },
+            1
+        );
 
         if (!bro.IsSuccess())
         {
@@ -82,19 +162,14 @@ public class BackendAuthManager : MonoBehaviour
             return;
         }
 
-        // 데이터가 없으면 새로 생성
         if (bro.FlattenRows().Count <= 0)
         {
             bool created = PlayerDataService.CreateDefaultData(nickname);
 
             if (created)
-            {
                 Debug.Log("처음 유저 데이터 생성 성공");
-            }
             else
-            {
                 Debug.LogError("처음 유저 데이터 생성 실패");
-            }
         }
         else
         {

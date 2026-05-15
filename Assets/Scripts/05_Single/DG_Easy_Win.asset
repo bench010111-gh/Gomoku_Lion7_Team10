@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6870e667035f39b4a9cbc2c44898579b, type: 3}
+  m_Name: DG_Easy_Win
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueData
+  lines:
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\uD06D..! \uC5ED\uC2DC \uD0D1\uACE8\uACF5\uC6D0\uC740 \uBB34\uB9AC\uC600\uB358\uAC74\uAC00..."
+    speakerPortrait: {fileID: 3931525808382836099, guid: e8861a745984f804da671e9a80036c49, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\uC6B0\uB9AC \uC80A\uC740 \uCE5C\uAD6C\uB97C... "
+    speakerPortrait: {fileID: 3931525808382836099, guid: e8861a745984f804da671e9a80036c49, type: 3}
+  - speakerName: "\uC624\uD6C4\uB450\uC2DC \uCCAD\uB144"
+    dialogueText: "\uC751\uC6D0\uD55C\uB2E4. ... \uB045\uB046"
+    speakerPortrait: {fileID: 3931525808382836099, guid: e8861a745984f804da671e9a80036c49, type: 3}
