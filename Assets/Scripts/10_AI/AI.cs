@@ -212,6 +212,8 @@ public class AI : MonoBehaviour
 
                 if (IsFive(pos.x, pos.y, current, board))
                     score = FIVE + depth;
+                else if(current == 1 && IsForbidden(pos.x, pos.y, current, board))
+                    score = FORBIDDEN_SCORE; 
                 else
                     score = -AlphaBeta(board, depth - 1, -beta, -alpha, opponent, candidates);
 
@@ -265,7 +267,7 @@ public class AI : MonoBehaviour
 
             score += myCount switch
             {
-                5 => (player == 1 && isOverline) ? FORBIDDEN_SCORE : FIVE,
+                5 => (player == 1 && isOverline) ? 0 : FIVE,
                 4 => (leftOpen && rightOpen) ? OPEN_FOUR : CLOSED_FOUR,
                 3 => (leftOpen && rightOpen) ? OPEN_THREE : CLOSED_THREE,
                 2 => (leftOpen && rightOpen) ? OPEN_TWO : CLOSED_TWO,
@@ -338,9 +340,7 @@ public class AI : MonoBehaviour
 
         if (player == 1)
         {
-            if (IsConnect6(x, y, player, board) ||
-                IsDoubleFour(x, y, player, board) ||
-                IsDoubleOpenThree(x, y, player, board))
+            if(IsForbidden(x, y, player, board))
             {
                 board[x, y] = prev;
                 return FORBIDDEN_SCORE;
@@ -443,9 +443,7 @@ public class AI : MonoBehaviour
             if (current == 1)
             {
                 board[c.x, c.y] = 1;
-                bool forbidden = IsConnect6(c.x, c.y, 1, board)
-                              || IsDoubleFour(c.x, c.y, 1, board)
-                              || IsDoubleOpenThree(c.x, c.y, 1, board);
+                bool forbidden = IsForbidden(c.x, c.y, 1, board); 
                 board[c.x, c.y] = 0;
                 if (forbidden) continue;
             }
@@ -544,13 +542,13 @@ public class AI : MonoBehaviour
     int CountFourInDirection(int x, int y, int dx, int dy, int player, int[,] board)
     {
         int count = 0;
-        Span<int> seenPatterns = stackalloc int[5];
+        Span<int> seenPatterns = stackalloc int[6]; 
         int seenCount = 0;
 
         for (int i = -4; i <= 0; i++)
         {
             int stoneMask = 0;
-            int emptyPos = -1;
+            int emptyCount = 0;
             bool possible = true;
 
             for (int j = 0; j < 5; j++)
@@ -563,15 +561,24 @@ public class AI : MonoBehaviour
 
                 int p = (offset == 0) ? player : board[nx, ny];
                 if (p == player) stoneMask |= (1 << j);
-                else if (p == 0) emptyPos = j;
+                else if (p == 0) emptyCount++;
                 else { possible = false; break; }
             }
 
-            if (!possible || emptyPos == -1) continue;
+            if (!possible || emptyCount != 1) continue;
 
             int stoneCount = 0;
             for (int b = 0; b < 5; b++) if ((stoneMask & (1 << b)) != 0) stoneCount++;
             if (stoneCount != 4) continue;
+
+            if (player == 1)
+            {
+                int lx = x + dx * (i - 1), ly = y + dy * (i - 1);
+                int rx = x + dx * (i + 5), ry = y + dy * (i + 5);
+                bool leftExt = IsValidPos(lx, ly) && board[lx, ly] == player;
+                bool rightExt = IsValidPos(rx, ry) && board[rx, ry] == player;
+                if (leftExt || rightExt) continue;
+            }
 
             int absoluteMask = 0;
             for (int j = 0; j < 5; j++)
@@ -581,10 +588,10 @@ public class AI : MonoBehaviour
             for (int s = 0; s < seenCount; s++)
                 if (seenPatterns[s] == absoluteMask) { alreadySeen = true; break; }
 
-            if (!alreadySeen)
+            if (alreadySeen) continue;
+
+            if (seenCount < 6)
                 seenPatterns[seenCount++] = absoluteMask;
-            else
-                continue;
 
             count++;
         }
@@ -693,6 +700,15 @@ public class AI : MonoBehaviour
     #endregion
 
     #region Helper
+    bool IsForbidden(int x, int y, int player, int[,] board)
+    {
+        if (IsConnect6(x, y, player, board)) return true; 
+        if(IsDoubleFour(x, y, player, board)) return true;
+        if(IsDoubleOpenThree(x, y, player, board)) return true;
+
+        return false; 
+    }
+
     bool IsValidPos(int x, int y) => x >= 0 && y >= 0 && x < BOARD_SIZE && y < BOARD_SIZE;
 
     bool IsBoardEmpty(int[,] board)
