@@ -400,6 +400,7 @@ public class AIGameManager : MonoBehaviour
         isGameOver = true;
         isTimerRunning = false;
 
+        ClearLastPlacedStoneMarker();
         UpdateForbiddenMarkers();
 
         if (gameOverText != null)
